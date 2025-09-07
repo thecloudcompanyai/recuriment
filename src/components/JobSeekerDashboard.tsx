@@ -40,6 +40,7 @@ interface Job {
   description: string;
   requirements: string[];
   tags: string[];
+  category: string;
 }
 
 interface ResumeData {
@@ -67,6 +68,7 @@ interface ResumeData {
 const JobSeekerDashboard: React.FC<JobSeekerDashboardProps> = ({ onBack, jobs }) => {
   const [activeTab, setActiveTab] = useState('jobs');
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [showAIBuilder, setShowAIBuilder] = useState(false);
   const [showResumeRating, setShowResumeRating] = useState(false);
@@ -138,6 +140,23 @@ const JobSeekerDashboard: React.FC<JobSeekerDashboardProps> = ({ onBack, jobs })
     location: 'San Francisco, CA',
     bio: 'Passionate frontend developer with 5+ years of experience building responsive web applications...'
   };
+
+  const categories = [
+    'All',
+    'Actuarial & Underwriting',
+    'Data Science & Data Engineering',
+    'Product Management',
+    'Catastrophe Modeling',
+    'Machine Learning & Predictive Modeling'
+  ];
+
+  const filteredJobs = jobs.filter(job => {
+    const matchesSearch = job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         job.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         job.requirements.some(req => req.toLowerCase().includes(searchTerm.toLowerCase()));
+    const matchesCategory = selectedCategory === 'All' || job.category === selectedCategory;
+    return matchesSearch && matchesCategory;
+  });
   const renderSidebar = () => (
     <>
       {/* Mobile Menu Overlay */}
@@ -264,7 +283,7 @@ const JobSeekerDashboard: React.FC<JobSeekerDashboardProps> = ({ onBack, jobs })
       {/* Search Header */}
       <div className="mb-6">
         <div className="flex justify-between items-center mb-4">
-          <h1 className="text-2xl lg:text-3xl font-bold text-gray-800">Find Your Next Opportunity</h1>
+          <h1 className="text-2xl lg:text-3xl font-bold text-gray-800">Executive Opportunities</h1>
           <button
             data-onboarding="resume-rating"
             onClick={() => setShowResumeRating(true)}
@@ -286,17 +305,22 @@ const JobSeekerDashboard: React.FC<JobSeekerDashboardProps> = ({ onBack, jobs })
               className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
-          <button className="flex items-center space-x-2 px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
-            <Filter className="w-5 h-5" />
-            <span>Filters</span>
-          </button>
+          <select
+            value={selectedCategory}
+            onChange={(e) => setSelectedCategory(e.target.value)}
+            className="px-4 py-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm lg:text-base"
+          >
+            {categories.map(category => (
+              <option key={category} value={category}>{category}</option>
+            ))}
+          </select>
         </div>
       </div>
 
       {/* Job Listings */}
       <div className="grid lg:grid-cols-2 gap-4 lg:gap-6">
         <div className="space-y-4">
-          {jobs.map((job) => (
+          {filteredJobs.map((job) => (
             <div
               key={job.id}
               onClick={() => setSelectedJob(job)}
@@ -335,6 +359,9 @@ const JobSeekerDashboard: React.FC<JobSeekerDashboardProps> = ({ onBack, jobs })
                     {tag}
                   </span>
                 ))}
+                <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full font-medium">
+                  {job.category}
+                </span>
               </div>
               
               <p className="text-sm text-gray-500">{job.posted}</p>

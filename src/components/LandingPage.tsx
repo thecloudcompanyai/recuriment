@@ -72,14 +72,17 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetJob, onPostJob }) => {
       <section className="container mx-auto px-4 lg:px-6 py-12 lg:py-20">
         <div className="text-center max-w-4xl mx-auto">
           <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold text-gray-900 mb-6 leading-tight">
-            Connect Talent with 
-            <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              {" "}Opportunity
-            </span>
+            Executive Recruiters
           </h1>
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-700 mb-6 leading-tight">
+            Connect Specialized Talent with 
+            <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              {" "}Expert Opportunities
+            </span>
+          </h2>
           <p className="text-lg lg:text-xl text-gray-600 mb-8 lg:mb-12 leading-relaxed px-4">
-            The premier platform where exceptional talent meets innovative companies. 
-            Build your career or find your next star employee with our cutting-edge recruitment solutions.
+            Specialized executive recruiting platform connecting top-tier professionals with leading companies 
+            in actuarial sciences, data engineering, product management, and advanced analytics.
           </p>
           
           {/* CTA Buttons */}
@@ -127,7 +130,71 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetJob, onPostJob }) => {
       </section>
 
       {/* Features Section */}
-      <section id="features" className="py-12 lg:py-20 bg-white">
+      <section id="features" className="py-12 lg:py-20 bg-gray-50">
+        <div className="container mx-auto px-4 lg:px-6">
+          <div className="text-center mb-12 lg:mb-16">
+            <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">Areas of Expertise</h2>
+            <p className="text-lg lg:text-xl text-gray-600 max-w-2xl mx-auto px-4">
+              Specialized recruitment services across high-demand technical and analytical fields
+            </p>
+          </div>
+          
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 px-4 mb-16">
+            <div className="text-center p-6 lg:p-8 rounded-2xl bg-white shadow-lg hover:shadow-xl transition-shadow border border-gray-100">
+              <div className="w-12 h-12 lg:w-16 lg:h-16 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-4 lg:mb-6">
+                <TrendingUp className="w-6 h-6 lg:w-8 lg:h-8 text-white" />
+              </div>
+              <h3 className="text-xl lg:text-2xl font-bold text-gray-900 mb-4">Actuarial & Underwriting</h3>
+              <p className="text-sm lg:text-base text-gray-600 leading-relaxed">
+                Connect with certified actuaries, risk analysts, and underwriting professionals across insurance and financial services
+              </p>
+            </div>
+            
+            <div className="text-center p-6 lg:p-8 rounded-2xl bg-white shadow-lg hover:shadow-xl transition-shadow border border-gray-100">
+              <div className="w-12 h-12 lg:w-16 lg:h-16 bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl flex items-center justify-center mx-auto mb-4 lg:mb-6">
+                <Star className="w-6 h-6 lg:w-8 lg:h-8 text-white" />
+              </div>
+              <h3 className="text-xl lg:text-2xl font-bold text-gray-900 mb-4">Data Science & Engineering</h3>
+              <p className="text-sm lg:text-base text-gray-600 leading-relaxed">
+                Elite data scientists, engineers, and analytics professionals specializing in big data and advanced analytics
+              </p>
+            </div>
+            
+            <div className="text-center p-6 lg:p-8 rounded-2xl bg-white shadow-lg hover:shadow-xl transition-shadow border border-gray-100">
+              <div className="w-12 h-12 lg:w-16 lg:h-16 bg-gradient-to-r from-green-600 to-teal-600 rounded-2xl flex items-center justify-center mx-auto mb-4 lg:mb-6">
+                <Briefcase className="w-6 h-6 lg:w-8 lg:h-8 text-white" />
+              </div>
+              <h3 className="text-xl lg:text-2xl font-bold text-gray-900 mb-4">Product Management</h3>
+              <p className="text-sm lg:text-base text-gray-600 leading-relaxed">
+                Strategic product leaders and managers with expertise in technical product development and market strategy
+              </p>
+            </div>
+            
+            <div className="text-center p-6 lg:p-8 rounded-2xl bg-white shadow-lg hover:shadow-xl transition-shadow border border-gray-100">
+              <div className="w-12 h-12 lg:w-16 lg:h-16 bg-gradient-to-r from-red-600 to-orange-600 rounded-2xl flex items-center justify-center mx-auto mb-4 lg:mb-6">
+                <CheckCircle className="w-6 h-6 lg:w-8 lg:h-8 text-white" />
+              </div>
+              <h3 className="text-xl lg:text-2xl font-bold text-gray-900 mb-4">Catastrophe Modeling</h3>
+              <p className="text-sm lg:text-base text-gray-600 leading-relaxed">
+                Specialized professionals in catastrophe risk modeling, natural disaster analytics, and climate risk assessment
+              </p>
+            </div>
+            
+            <div className="text-center p-6 lg:p-8 rounded-2xl bg-white shadow-lg hover:shadow-xl transition-shadow border border-gray-100 md:col-span-2 lg:col-span-1">
+              <div className="w-12 h-12 lg:w-16 lg:h-16 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4 lg:mb-6">
+                <Users className="w-6 h-6 lg:w-8 lg:h-8 text-white" />
+              </div>
+              <h3 className="text-xl lg:text-2xl font-bold text-gray-900 mb-4">Machine Learning & Predictive Modeling</h3>
+              <p className="text-sm lg:text-base text-gray-600 leading-relaxed">
+                AI/ML engineers, data scientists, and predictive modeling experts driving innovation in automated decision-making
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Why Choose Section */}
+      <section className="py-12 lg:py-20 bg-white">
         <div className="container mx-auto px-4 lg:px-6">
           <div className="text-center mb-12 lg:mb-16">
             <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">Why Choose TalentConnect?</h2>
@@ -137,23 +204,23 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetJob, onPostJob }) => {
           </div>
           
           <div className="grid md:grid-cols-3 gap-6 lg:gap-8 px-4">
-            <div data-onboarding="smart-matching" className="text-center p-6 lg:p-8 rounded-2xl bg-gradient-to-br from-blue-50 to-blue-100 hover:shadow-lg transition-shadow">
+            <div className="text-center p-6 lg:p-8 rounded-2xl bg-gradient-to-br from-blue-50 to-blue-100 hover:shadow-lg transition-shadow">
               <div className="w-12 h-12 lg:w-16 lg:h-16 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 lg:mb-6">
                 <Star className="w-6 h-6 lg:w-8 lg:h-8 text-white" />
               </div>
-              <h3 className="text-xl lg:text-2xl font-bold text-gray-900 mb-4">Smart Matching</h3>
+              <h3 className="text-xl lg:text-2xl font-bold text-gray-900 mb-4">Executive-Level Matching</h3>
               <p className="text-sm lg:text-base text-gray-600 leading-relaxed">
-                AI-powered algorithms ensure perfect job-candidate matches based on skills, experience, and culture fit
+                Sophisticated matching algorithms designed for senior-level positions requiring specialized technical expertise
               </p>
             </div>
             
-            <div data-onboarding="career-growth" className="text-center p-6 lg:p-8 rounded-2xl bg-gradient-to-br from-purple-50 to-purple-100 hover:shadow-lg transition-shadow">
+            <div className="text-center p-6 lg:p-8 rounded-2xl bg-gradient-to-br from-purple-50 to-purple-100 hover:shadow-lg transition-shadow">
               <div className="w-12 h-12 lg:w-16 lg:h-16 bg-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4 lg:mb-6">
                 <TrendingUp className="w-6 h-6 lg:w-8 lg:h-8 text-white" />
               </div>
-              <h3 className="text-xl lg:text-2xl font-bold text-gray-900 mb-4">Career Growth</h3>
+              <h3 className="text-xl lg:text-2xl font-bold text-gray-900 mb-4">Industry Expertise</h3>
               <p className="text-sm lg:text-base text-gray-600 leading-relaxed">
-                Comprehensive tools for skill development, portfolio building, and career advancement tracking
+                Deep understanding of technical requirements and market dynamics in specialized analytical fields
               </p>
             </div>
             
@@ -161,9 +228,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetJob, onPostJob }) => {
               <div className="w-12 h-12 lg:w-16 lg:h-16 bg-green-600 rounded-2xl flex items-center justify-center mx-auto mb-4 lg:mb-6">
                 <CheckCircle className="w-6 h-6 lg:w-8 lg:h-8 text-white" />
               </div>
-              <h3 className="text-xl lg:text-2xl font-bold text-gray-900 mb-4">Verified Quality</h3>
+              <h3 className="text-xl lg:text-2xl font-bold text-gray-900 mb-4">Executive Network</h3>
               <p className="text-sm lg:text-base text-gray-600 leading-relaxed">
-                Rigorous verification process ensures authentic profiles and legitimate job opportunities
+                Exclusive access to a curated network of senior professionals and C-level executives in technical fields
               </p>
             </div>
           </div>

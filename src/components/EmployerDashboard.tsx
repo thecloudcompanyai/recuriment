@@ -50,6 +50,7 @@ interface Job {
   description: string;
   requirements: string[];
   tags: string[];
+  category: string;
 }
 
 const EmployerDashboard: React.FC<EmployerDashboardProps> = ({ onBack, onAddJob }) => {
@@ -101,17 +102,18 @@ const EmployerDashboard: React.FC<EmployerDashboardProps> = ({ onBack, onAddJob 
     salary: '',
     requirements: '',
     description: '',
-    type: 'Full-time'
+    type: 'Full-time',
+    category: 'Actuarial & Underwriting'
   });
   const [postedJobs, setPostedJobs] = useState<JobPosting[]>([
     {
       id: '1',
-      title: 'Senior Frontend Developer',
-      company: 'TechCorp',
+      title: 'Chief Actuary',
+      company: 'Global Insurance Group',
       location: 'San Francisco, CA',
-      salary: '$120k - $160k',
-      requirements: ['React', 'TypeScript', 'Node.js', '5+ years experience'],
-      description: 'We are looking for a talented Senior Frontend Developer...',
+      salary: '$200k - $280k',
+      requirements: ['FSA/FCAS certification', 'Executive leadership', '15+ years experience'],
+      description: 'Lead our actuarial team in developing sophisticated risk models...',
       type: 'Full-time',
       posted: '2 days ago',
       status: 'active'
@@ -190,7 +192,8 @@ const EmployerDashboard: React.FC<EmployerDashboardProps> = ({ onBack, onAddJob 
         jobForm.type,
         jobForm.location.includes('Remote') ? 'Remote' : 'On-site',
         jobForm.salary.includes('$') ? 'Competitive Salary' : 'Salary Negotiable'
-      ].filter(tag => tag)
+      ].filter(tag => tag),
+      category: jobForm.category
     };
     
     // Add to global jobs state
@@ -206,7 +209,8 @@ const EmployerDashboard: React.FC<EmployerDashboardProps> = ({ onBack, onAddJob 
       description: jobForm.description,
       type: jobForm.type,
       posted: 'Just now',
-      status: 'active'
+      status: 'active',
+      category: jobForm.category
     };
 
     setPostedJobs(prev => [newJob, ...prev]);
@@ -217,7 +221,8 @@ const EmployerDashboard: React.FC<EmployerDashboardProps> = ({ onBack, onAddJob 
       salary: '',
       requirements: '',
       description: '',
-      type: 'Full-time'
+      type: 'Full-time',
+      category: 'Actuarial & Underwriting'
     });
     alert('Job posted successfully!');
     setActiveTab('manage-jobs');
@@ -248,7 +253,7 @@ const EmployerDashboard: React.FC<EmployerDashboardProps> = ({ onBack, onAddJob 
                 value={jobForm.title}
                 onChange={(e) => handleInputChange('title', e.target.value)}
                 className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                placeholder="e.g., Senior Frontend Developer"
+                placeholder="e.g., Chief Actuary"
               />
             </div>
             <div>
@@ -260,12 +265,12 @@ const EmployerDashboard: React.FC<EmployerDashboardProps> = ({ onBack, onAddJob 
                 value={jobForm.company}
                 onChange={(e) => handleInputChange('company', e.target.value)}
                 className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                placeholder="e.g., TechCorp Inc."
+                placeholder="e.g., Global Insurance Group"
               />
             </div>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-6">
+          <div className="grid md:grid-cols-3 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Location *
@@ -294,6 +299,22 @@ const EmployerDashboard: React.FC<EmployerDashboardProps> = ({ onBack, onAddJob 
                 <option value="Internship">Internship</option>
               </select>
             </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Specialization *
+              </label>
+              <select
+                value={jobForm.category}
+                onChange={(e) => handleInputChange('category', e.target.value)}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+              >
+                <option value="Actuarial & Underwriting">Actuarial & Underwriting</option>
+                <option value="Data Science & Data Engineering">Data Science & Data Engineering</option>
+                <option value="Product Management">Product Management</option>
+                <option value="Catastrophe Modeling">Catastrophe Modeling</option>
+                <option value="Machine Learning & Predictive Modeling">Machine Learning & Predictive Modeling</option>
+              </select>
+            </div>
           </div>
 
           <div>
@@ -305,7 +326,7 @@ const EmployerDashboard: React.FC<EmployerDashboardProps> = ({ onBack, onAddJob 
               value={jobForm.salary}
               onChange={(e) => handleInputChange('salary', e.target.value)}
               className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-              placeholder="e.g., $80k - $120k or Competitive"
+              placeholder="e.g., $150k - $250k or Competitive"
             />
           </div>
 
@@ -318,7 +339,7 @@ const EmployerDashboard: React.FC<EmployerDashboardProps> = ({ onBack, onAddJob 
               value={jobForm.requirements}
               onChange={(e) => handleInputChange('requirements', e.target.value)}
               className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-              placeholder="e.g., React, TypeScript, 5+ years experience, Bachelor's degree (separate with commas)"
+              placeholder="e.g., FSA/FCAS certification, Executive leadership, 15+ years experience (separate with commas)"
             />
           </div>
 

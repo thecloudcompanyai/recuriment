@@ -14,6 +14,7 @@ interface Job {
   description: string;
   requirements: string[];
   tags: string[];
+  category: string;
 }
 
 function App() {
@@ -21,39 +22,68 @@ function App() {
   const [jobs, setJobs] = useState<Job[]>([
     {
       id: '1',
-      title: 'Senior Frontend Developer',
-      company: 'TechCorp',
+      title: 'Chief Actuary',
+      company: 'Global Insurance Group',
       location: 'San Francisco, CA',
       type: 'Full-time',
-      salary: '$120k - $160k',
+      salary: '$200k - $280k',
       posted: '2 days ago',
-      description: 'We are looking for a talented Senior Frontend Developer to join our dynamic team. You will be responsible for building and maintaining high-quality web applications using modern technologies.',
-      requirements: ['React', 'TypeScript', 'Node.js', '5+ years experience'],
-      tags: ['Remote', 'Tech', 'Senior Level']
+      description: 'Lead our actuarial team in developing sophisticated risk models and pricing strategies for our global insurance portfolio. Drive strategic initiatives and provide executive-level insights.',
+      requirements: ['FSA/FCAS certification', 'Executive leadership', '15+ years experience', 'Advanced analytics'],
+      tags: ['Executive', 'Insurance', 'Leadership'],
+      category: 'Actuarial & Underwriting'
     },
     {
       id: '2',
-      title: 'UX/UI Designer',
-      company: 'DesignStudio',
+      title: 'VP of Data Science',
+      company: 'FinTech Innovations',
       location: 'New York, NY',
       type: 'Full-time',
-      salary: '$80k - $110k',
+      salary: '$180k - $250k',
       posted: '1 week ago',
-      description: 'Join our creative team as a UX/UI Designer. Create intuitive and visually appealing user interfaces for web and mobile applications.',
-      requirements: ['Figma', 'Adobe Creative Suite', 'User Research', '3+ years experience'],
-      tags: ['Design', 'Creative', 'Hybrid']
+      description: 'Lead our data science organization in building next-generation ML models for financial risk assessment and customer analytics. Manage a team of 20+ data scientists.',
+      requirements: ['PhD in Data Science/Statistics', 'Team leadership', 'MLOps expertise', '10+ years experience'],
+      tags: ['Executive', 'FinTech', 'Machine Learning'],
+      category: 'Data Science & Data Engineering'
     },
     {
       id: '3',
-      title: 'Data Scientist',
-      company: 'DataInsights',
+      title: 'Senior Product Manager - Catastrophe Models',
+      company: 'RiskTech Solutions',
       location: 'Austin, TX',
-      type: 'Contract',
-      salary: '$90k - $130k',
+      type: 'Full-time',
+      salary: '$140k - $180k',
       posted: '3 days ago',
-      description: 'Analyze complex datasets to derive actionable insights. Work with machine learning models and statistical analysis.',
-      requirements: ['Python', 'SQL', 'Machine Learning', 'Statistics'],
-      tags: ['Data', 'Analytics', 'Remote']
+      description: 'Drive product strategy for our catastrophe modeling platform used by major reinsurers globally. Work with climate scientists and actuaries to enhance model accuracy.',
+      requirements: ['Product management', 'Catastrophe modeling', 'Insurance domain', '8+ years experience'],
+      tags: ['Product', 'Insurance', 'Climate Risk'],
+      category: 'Product Management'
+    },
+    {
+      id: '4',
+      title: 'Principal ML Engineer - Predictive Analytics',
+      company: 'InsurTech Dynamics',
+      location: 'Remote',
+      type: 'Full-time',
+      salary: '$160k - $220k',
+      posted: '5 days ago',
+      description: 'Build and deploy large-scale machine learning systems for insurance pricing and claims prediction. Lead technical architecture for our predictive modeling platform.',
+      requirements: ['ML Engineering', 'Python/Scala', 'Cloud platforms', 'Insurance analytics'],
+      tags: ['Remote', 'ML Engineering', 'Senior Level'],
+      category: 'Machine Learning & Predictive Modeling'
+    },
+    {
+      id: '5',
+      title: 'Senior Underwriter - Specialty Lines',
+      company: 'Premier Risk Partners',
+      location: 'Chicago, IL',
+      type: 'Full-time',
+      salary: '$120k - $160k',
+      posted: '1 week ago',
+      description: 'Underwrite complex specialty insurance risks using advanced analytics and catastrophe models. Collaborate with actuarial teams on pricing strategies.',
+      requirements: ['Underwriting experience', 'Specialty lines', 'Risk assessment', 'Analytics tools'],
+      tags: ['Insurance', 'Risk Management', 'Analytics'],
+      category: 'Actuarial & Underwriting'
     }
   ]);
 
@@ -61,7 +91,8 @@ function App() {
     const job: Job = {
       ...newJob,
       id: Date.now().toString(),
-      posted: 'Just now'
+      posted: 'Just now',
+      category: newJob.category || 'General'
     };
     setJobs(prev => [job, ...prev]);
   };
