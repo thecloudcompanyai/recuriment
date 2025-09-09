@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { getGeminiAI, handleAIError, AI_GENERATION_CONFIG } from '../utils/aiConfig';
 import { TrendingUp, DollarSign, Star, Loader2, AlertCircle, CheckCircle } from 'lucide-react';
 
 interface SalaryBenchmarkProps {
@@ -30,7 +30,6 @@ const SalaryBenchmark: React.FC<SalaryBenchmarkProps> = ({
   const [rating, setRating] = useState<SalaryRating | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const genAI = new GoogleGenerativeAI('AIzaSyB1FoVA-2py0eS03IuqGLk5MeMi3p1jn7M');
 
   const analyzeSalary = async () => {
     if (!salary || !jobTitle) {
@@ -42,6 +41,7 @@ const SalaryBenchmark: React.FC<SalaryBenchmarkProps> = ({
     setError(null);
 
     try {
+      const genAI = getGeminiAI();
       const prompt = `
         Analyze the following job posting and rate the salary competitiveness out of 10:
 
@@ -69,7 +69,10 @@ const SalaryBenchmark: React.FC<SalaryBenchmarkProps> = ({
         Rate 1-3 as below market, 4-6 as average, 7-8 as competitive, 9-10 as excellent.
       `;
 
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+      const model = genAI.getGenerativeModel({ 
+        model: "gemini-1.5-flash",
+        generationConfig: AI_GENERATION_CONFIG
+      });
       const result = await model.generateContent(prompt);
       const response = await result.response;
       const text = response.text();
@@ -85,10 +88,12 @@ const SalaryBenchmark: React.FC<SalaryBenchmarkProps> = ({
       }
 
     } catch (error) {
-      console.error('Error analyzing salary:', error);
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      if (errorMessage.includes('503') && errorMessage.includes('overloaded')) {
-        setError('The AI service is currently busy. Please try again in a few moments.');
+      const errorMessage = handleAIError(error);
+      setError(errorMessage);
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
       } else {
         setError('Failed to analyze salary. Please try again.');
       }

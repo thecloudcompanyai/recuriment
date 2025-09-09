@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import OnboardingOverlay from './OnboardingOverlay';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { getGeminiAI, handleAIError, AI_GENERATION_CONFIG } from '../utils/aiConfig';
 import SalaryBenchmark from './SalaryBenchmark';
 import { 
   ArrowLeft, 
@@ -120,7 +120,6 @@ const EmployerDashboard: React.FC<EmployerDashboardProps> = ({ onBack, onAddJob 
     }
   ]);
 
-  const genAI = new GoogleGenerativeAI('AIzaSyB7Hbl5seOhDqFSgPZCvV4ymlFTdKM_5gw');
 
   const handleInputChange = (field: string, value: string) => {
     setJobForm(prev => ({ ...prev, [field]: value }));
@@ -134,6 +133,7 @@ const EmployerDashboard: React.FC<EmployerDashboardProps> = ({ onBack, onAddJob 
 
     setIsGenerating(true);
     try {
+      const genAI = getGeminiAI();
       const prompt = `
         Generate a comprehensive and professional job description for the following position:
 
@@ -154,17 +154,22 @@ const EmployerDashboard: React.FC<EmployerDashboardProps> = ({ onBack, onAddJob 
         Make it professional, engaging, and tailored to attract top talent. The description should be 3-4 paragraphs long and highlight why candidates would want to work for this company.
       `;
 
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+      const model = genAI.getGenerativeModel({ 
+        model: "gemini-1.5-flash",
+        generationConfig: AI_GENERATION_CONFIG
+      });
       const result = await model.generateContent(prompt);
       const response = await result.response;
       const generatedDescription = response.text();
 
       setJobForm(prev => ({ ...prev, description: generatedDescription }));
     } catch (error) {
-      console.error('Error generating job description:', error);
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      if (errorMessage.includes('503') && errorMessage.includes('overloaded')) {
-        alert('The AI service is currently busy. Please try again in a few moments.');
+      const errorMessage = handleAIError(error);
+      alert(errorMessage);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
       } else {
         alert('Failed to generate job description. Please try again or write it manually.');
       }

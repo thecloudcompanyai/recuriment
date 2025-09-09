@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { getGeminiAI, handleAIError, AI_GENERATION_CONFIG } from '../utils/aiConfig';
 import { MessageCircle, Send, Bot, User, Loader2, Sparkles, ArrowLeft, Minimize2, Maximize2, RotateCcw, Copy, ThumbsUp, ThumbsDown } from 'lucide-react';
 
 interface Message {
@@ -62,7 +62,6 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ onBack, userProfile, resumeData }
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  const genAI = new GoogleGenerativeAI('AIzaSyAj36MF3L_5a0ZysJ-GBKamrOux9m2SHnQ');
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -129,6 +128,7 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ onBack, userProfile, resumeData }
     setIsLoading(true);
 
     try {
+      const genAI = getGeminiAI();
       const userContext = generateUserContext();
       
       const prompt = `
@@ -153,7 +153,10 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ onBack, userProfile, resumeData }
         Provide a helpful response based on their profile and career goals.
       `;
 
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+      const model = genAI.getGenerativeModel({ 
+        model: "gemini-1.5-flash",
+        generationConfig: AI_GENERATION_CONFIG
+      });
       const result = await model.generateContent(prompt);
       const response = await result.response;
       const botResponse = response.text();
@@ -169,15 +172,16 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ onBack, userProfile, resumeData }
       setMessages(prev => [...prev, botMessage]);
       setShowSuggestions(false);
     } catch (error) {
-      console.error('Error sending message:', error);
-      const errorMessage: Message = {
+      const errorMessage = handleAIError(error);
+      
+      const errorMsg: Message = {
         id: (Date.now() + 1).toString(),
         type: 'bot',
-        content: "I apologize, but I'm having trouble processing your request right now. Please try again in a moment.",
+        content: errorMessage,
         timestamp: new Date(),
         feedback: null
       };
-      setMessages(prev => [...prev, errorMessage]);
+      setMessages(prev => [...prev, errorMsg]);
     } finally {
       setIsLoading(false);
     }

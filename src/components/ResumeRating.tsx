@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { getGeminiAI, handleAIError, AI_GENERATION_CONFIG } from '../utils/aiConfig';
 import { Star, FileText, Briefcase, Loader2, CheckCircle, AlertCircle, TrendingUp, Target } from 'lucide-react';
 
 interface ResumeRatingProps {
@@ -25,7 +25,6 @@ const ResumeRating: React.FC<ResumeRatingProps> = ({ onBack }) => {
   });
   const [ratingResult, setRatingResult] = useState<RatingResult | null>(null);
 
-  const genAI = new GoogleGenerativeAI('AIzaSyAj36MF3L_5a0ZysJ-GBKamrOux9m2SHnQ');
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -34,6 +33,7 @@ const ResumeRating: React.FC<ResumeRatingProps> = ({ onBack }) => {
   const analyzeResume = async () => {
     setIsAnalyzing(true);
     try {
+      const genAI = getGeminiAI();
       const prompt = `
         Analyze the following resume against the job requirements and provide a detailed rating. Return the response in JSON format with the exact structure shown below:
 
@@ -63,7 +63,10 @@ const ResumeRating: React.FC<ResumeRatingProps> = ({ onBack }) => {
         }
       `;
 
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+      const model = genAI.getGenerativeModel({ 
+        model: "gemini-1.5-flash",
+        generationConfig: AI_GENERATION_CONFIG
+      });
       const result = await model.generateContent(prompt);
       const response = await result.response;
       const text = response.text();
@@ -78,10 +81,12 @@ const ResumeRating: React.FC<ResumeRatingProps> = ({ onBack }) => {
       }
       
     } catch (error) {
-      console.error('Error analyzing resume:', error);
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      if (errorMessage.includes('503') && errorMessage.includes('overloaded')) {
-        alert('The AI service is currently busy. Please try again in a few moments.');
+      const errorMessage = handleAIError(error);
+      alert(errorMessage);
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
       } else {
         alert('Failed to analyze resume. Please try again.');
       }
