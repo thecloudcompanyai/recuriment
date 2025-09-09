@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { getGeminiAI, handleAIError, AI_GENERATION_CONFIG } from '../utils/aiConfig';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import { Sparkles, Download, Save, Loader2, User, Briefcase, GraduationCap, Award } from 'lucide-react';
 
 interface ResumeData {
@@ -45,6 +45,7 @@ const AIResumeBuilder: React.FC<AIResumeBuilderProps> = ({ onSave, onBack }) => 
   });
   const [generatedResume, setGeneratedResume] = useState<ResumeData | null>(null);
 
+  const genAI = new GoogleGenerativeAI('AIzaSyAMqMgvCu-bM7rvZUDjbjDXCYoXT6iAL34');
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -53,7 +54,6 @@ const AIResumeBuilder: React.FC<AIResumeBuilderProps> = ({ onSave, onBack }) => 
   const generateResume = async () => {
     setIsGenerating(true);
     try {
-      const genAI = getGeminiAI();
       const prompt = `
         Create a professional resume based on the following information. Return the response in JSON format with the exact structure shown below:
 
@@ -103,10 +103,7 @@ const AIResumeBuilder: React.FC<AIResumeBuilderProps> = ({ onSave, onBack }) => 
         }
       `;
 
-      const model = genAI.getGenerativeModel({ 
-        model: "gemini-1.5-flash",
-        generationConfig: AI_GENERATION_CONFIG
-      });
+      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
       const result = await model.generateContent(prompt);
       const response = await result.response;
       const text = response.text();
@@ -122,8 +119,8 @@ const AIResumeBuilder: React.FC<AIResumeBuilderProps> = ({ onSave, onBack }) => 
       }
       
     } catch (error) {
-      const errorMessage = handleAIError(error);
-      alert(errorMessage);
+      console.error('Error generating resume:', error);
+      alert('Failed to generate resume. Please try again.');
     } finally {
       setIsGenerating(false);
     }
