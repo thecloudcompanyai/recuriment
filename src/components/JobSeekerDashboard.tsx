@@ -194,7 +194,6 @@ const JobSeekerDashboard: React.FC<JobSeekerDashboardProps> = ({ onBack, jobs })
         <div className="space-y-2">
           <button
             data-onboarding="browse-jobs"
-            onClick={() => setActiveTab('jobs')}
             className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
               activeTab === 'jobs' ? 'bg-blue-100 text-blue-600' : 'text-gray-600 hover:bg-gray-100'
             }`}

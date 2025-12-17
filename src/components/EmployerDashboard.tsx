@@ -2,15 +2,15 @@ import React, { useState } from 'react';
 import OnboardingOverlay from './OnboardingOverlay';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import SalaryBenchmark from './SalaryBenchmark';
-import { 
-  ArrowLeft, 
-  Building2, 
-  MapPin, 
-  DollarSign, 
-  FileText, 
-  Sparkles, 
-  Loader2, 
-  Save, 
+import {
+  ArrowLeft,
+  Building2,
+  MapPin,
+  DollarSign,
+  FileText,
+  Sparkles,
+  Loader2,
+  Save,
   Eye,
   Users,
   Briefcase,
@@ -18,7 +18,10 @@ import {
   Plus,
   Menu,
   X,
-  TrendingUp
+  TrendingUp,
+  Plane,
+  Award,
+  Landmark
 } from 'lucide-react';
 
 interface EmployerDashboardProps {
@@ -97,7 +100,24 @@ const EmployerDashboard: React.FC<EmployerDashboardProps> = ({ onBack, onAddJob 
     title: '',
     company: '',
     location: '',
+    locationType: 'On-site',
+    travelPercentage: '',
     salary: '',
+    currency: 'USD',
+    baseSalaryMin: '',
+    baseSalaryMax: '',
+    bonusMin: '',
+    bonusMax: '',
+    benefits: {
+      pension: false,
+      health: false,
+      dental: false,
+      vacation: ''
+    },
+    seniorityLevel: '',
+    directReports: '',
+    indirectReports: '',
+    jobCategory: '',
     requirements: '',
     description: '',
     type: 'Full-time'
@@ -119,8 +139,27 @@ const EmployerDashboard: React.FC<EmployerDashboardProps> = ({ onBack, onAddJob 
 
   const genAI = new GoogleGenerativeAI('AIzaSyDeuDXluDkLSNaaJBzsR30uilQ4kRXVaAw');
 
-  const handleInputChange = (field: string, value: string) => {
-    setJobForm(prev => ({ ...prev, [field]: value }));
+  const currencies = ['USD', 'EUR', 'GBP', 'CAD', 'AUD', 'CHF', 'JPY', 'CNY', 'INR'];
+  const locationTypes = ['On-site', 'Remote', 'Hybrid'];
+  const seniorityLevels = ['Individual Contributor', 'Manager', 'Senior Manager', 'Director', 'Senior Director', 'VP', 'Senior VP', 'C-Level'];
+  const jobCategories = [
+    { group: 'Life Insurance', options: ['Life - Actuarial', 'Life - Other', 'Life - Data Science', 'Life - Underwriting', 'Life - Data Engineering', 'Life - Business Intelligence', 'Life - ILS', 'Life - Pension', 'Life - Retirement'] },
+    { group: 'Non-Life Insurance', options: ['Non-Life - Actuarial', 'Non-Life - Cat Modeling', 'Non-Life - Risk', 'Non-Life - Data Science', 'Non-Life - Underwriting', 'Non-Life - Other', 'Non-Life - Investment', 'Non-Life - Product Management', 'Non-Life - Data Engineer', 'Non-Life - Business Intelligence', 'Non-Life - Climate Risk', 'Non-Life - ESG', 'Non-Life - AI', 'Non-Life - Machine Learning'] },
+    { group: 'Health Insurance', options: ['Health - Actuarial', 'Health - Underwriting', 'Health - Data Science'] },
+    { group: 'Pension', options: ['Pension - Actuarial', 'Pension - Retirement'] },
+    { group: 'Cross-Domain', options: ['Cross-Domain - Business Intelligence', 'Cross-Domain - Data Engineering'] }
+  ];
+
+  const handleInputChange = (field: string, value: string | boolean) => {
+    if (field.startsWith('benefits.')) {
+      const benefitField = field.split('.')[1];
+      setJobForm(prev => ({
+        ...prev,
+        benefits: { ...prev.benefits, [benefitField]: value }
+      }));
+    } else {
+      setJobForm(prev => ({ ...prev, [field]: value }));
+    }
   };
 
   const generateJobDescription = async () => {
@@ -131,14 +170,26 @@ const EmployerDashboard: React.FC<EmployerDashboardProps> = ({ onBack, onAddJob 
 
     setIsGenerating(true);
     try {
+      const salaryInfo = jobForm.baseSalaryMin && jobForm.baseSalaryMax
+        ? `${jobForm.currency} ${jobForm.baseSalaryMin} - ${jobForm.baseSalaryMax}`
+        : 'Competitive';
+
+      const bonusInfo = jobForm.bonusMin && jobForm.bonusMax
+        ? ` + Bonus (${jobForm.currency} ${jobForm.bonusMin} - ${jobForm.bonusMax})`
+        : '';
+
       const prompt = `
         Generate a comprehensive and professional job description for the following position:
 
         Job Title: ${jobForm.title}
         Company: ${jobForm.company}
-        Location: ${jobForm.location || 'Not specified'}
-        Salary Range: ${jobForm.salary || 'Competitive'}
+        Job Category: ${jobForm.jobCategory || 'Not specified'}
+        Location: ${jobForm.location || 'Not specified'} (${jobForm.locationType})
+        Travel: ${jobForm.travelPercentage || 'None'}
+        Seniority Level: ${jobForm.seniorityLevel || 'Not specified'}
+        Salary Range: ${salaryInfo}${bonusInfo}
         Requirements: ${jobForm.requirements || 'Standard requirements for this role'}
+        Benefits: ${jobForm.benefits.health ? 'Health Insurance, ' : ''}${jobForm.benefits.dental ? 'Dental, ' : ''}${jobForm.benefits.pension ? 'Pension/401k, ' : ''}${jobForm.benefits.vacation ? `${jobForm.benefits.vacation} vacation` : ''}
 
         Please create a detailed job description that includes:
         1. A compelling overview of the role and company
@@ -148,7 +199,7 @@ const EmployerDashboard: React.FC<EmployerDashboardProps> = ({ onBack, onAddJob 
         5. Benefits and what makes this opportunity attractive
         6. Company culture highlights
 
-        Make it professional, engaging, and tailored to attract top talent. The description should be 3-4 paragraphs long and highlight why candidates would want to work for this company.
+        Make it professional, engaging, and tailored to attract top talent in the ${jobForm.jobCategory || 'insurance and financial services'} sector. The description should be 3-4 paragraphs long and highlight why candidates would want to work for this company.
       `;
 
       const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
@@ -201,22 +252,37 @@ const EmployerDashboard: React.FC<EmployerDashboardProps> = ({ onBack, onAddJob 
       return;
     }
 
+    // Construct salary string
+    let salaryString = '';
+    if (jobForm.baseSalaryMin && jobForm.baseSalaryMax) {
+      salaryString = `${jobForm.currency} ${jobForm.baseSalaryMin} - ${jobForm.baseSalaryMax}`;
+    } else {
+      salaryString = 'Competitive';
+    }
+
+    // Add bonus info if provided
+    if (jobForm.bonusMin && jobForm.bonusMax) {
+      salaryString += ` + Bonus (${jobForm.currency} ${jobForm.bonusMin} - ${jobForm.bonusMax})`;
+    }
+
     // Add job to global state for job seekers to see
     const jobForJobSeekers: Omit<Job, 'id' | 'posted'> = {
       title: jobForm.title,
       company: jobForm.company,
-      location: jobForm.location,
+      location: `${jobForm.location} (${jobForm.locationType})`,
       type: jobForm.type,
-      salary: jobForm.salary,
+      salary: salaryString,
       description: jobForm.description,
       requirements: jobForm.requirements.split(',').map(req => req.trim()).filter(req => req),
       tags: [
         jobForm.type,
-        jobForm.location.includes('Remote') ? 'Remote' : 'On-site',
-        jobForm.salary.includes('$') ? 'Competitive Salary' : 'Salary Negotiable'
+        jobForm.locationType,
+        jobForm.jobCategory,
+        jobForm.seniorityLevel,
+        salaryString.includes(jobForm.currency) ? 'Competitive Salary' : 'Salary Negotiable'
       ].filter(tag => tag)
     };
-    
+
     // Add to global jobs state
     onAddJob(jobForJobSeekers);
 
@@ -224,8 +290,8 @@ const EmployerDashboard: React.FC<EmployerDashboardProps> = ({ onBack, onAddJob 
       id: Date.now().toString(),
       title: jobForm.title,
       company: jobForm.company,
-      location: jobForm.location,
-      salary: jobForm.salary,
+      location: `${jobForm.location} (${jobForm.locationType})`,
+      salary: salaryString,
       requirements: jobForm.requirements.split(',').map(req => req.trim()).filter(req => req),
       description: jobForm.description,
       type: jobForm.type,
@@ -239,7 +305,24 @@ const EmployerDashboard: React.FC<EmployerDashboardProps> = ({ onBack, onAddJob 
       title: '',
       company: '',
       location: '',
+      locationType: 'On-site',
+      travelPercentage: '',
       salary: '',
+      currency: 'USD',
+      baseSalaryMin: '',
+      baseSalaryMax: '',
+      bonusMin: '',
+      bonusMax: '',
+      benefits: {
+        pension: false,
+        health: false,
+        dental: false,
+        vacation: ''
+      },
+      seniorityLevel: '',
+      directReports: '',
+      indirectReports: '',
+      jobCategory: '',
       requirements: '',
       description: '',
       type: 'Full-time'
@@ -261,90 +344,325 @@ const EmployerDashboard: React.FC<EmployerDashboardProps> = ({ onBack, onAddJob 
       </div>
 
       <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-4 lg:p-8">
-        <div className="space-y-6">
-          {/* Basic Information */}
-          <div className="grid md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Job Title *
-              </label>
-              <input
-                type="text"
-                value={jobForm.title}
-                onChange={(e) => handleInputChange('title', e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                placeholder="e.g., Senior Frontend Developer"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Company Name *
-              </label>
-              <input
-                type="text"
-                value={jobForm.company}
-                onChange={(e) => handleInputChange('company', e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                placeholder="e.g., TechCorp Inc."
-              />
-            </div>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Location *
-              </label>
-              <input
-                type="text"
-                value={jobForm.location}
-                onChange={(e) => handleInputChange('location', e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                placeholder="e.g., San Francisco, CA or Remote"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Job Type
-              </label>
-              <select
-                value={jobForm.type}
-                onChange={(e) => handleInputChange('type', e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-              >
-                <option value="Full-time">Full-time</option>
-                <option value="Part-time">Part-time</option>
-                <option value="Contract">Contract</option>
-                <option value="Freelance">Freelance</option>
-                <option value="Internship">Internship</option>
-              </select>
-            </div>
-          </div>
-
+        <div className="space-y-8">
+          {/* Basic Information Section */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Salary Range
-            </label>
-            <input
-              type="text"
-              value={jobForm.salary}
-              onChange={(e) => handleInputChange('salary', e.target.value)}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-              placeholder="e.g., $80k - $120k or Competitive"
-            />
+            <h3 className="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-200">Basic Information</h3>
+            <div className="space-y-4">
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Job Title *
+                  </label>
+                  <input
+                    type="text"
+                    value={jobForm.title}
+                    onChange={(e) => handleInputChange('title', e.target.value)}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="e.g., Senior Actuarial Analyst"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Company Name *
+                  </label>
+                  <input
+                    type="text"
+                    value={jobForm.company}
+                    onChange={(e) => handleInputChange('company', e.target.value)}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="e.g., Insurance Corp"
+                  />
+                </div>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Job Category *
+                  </label>
+                  <select
+                    value={jobForm.jobCategory}
+                    onChange={(e) => handleInputChange('jobCategory', e.target.value)}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="">Select a category</option>
+                    {jobCategories.map((category) => (
+                      <optgroup key={category.group} label={category.group}>
+                        {category.options.map((option) => (
+                          <option key={option} value={option}>{option}</option>
+                        ))}
+                      </optgroup>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Job Type *
+                  </label>
+                  <select
+                    value={jobForm.type}
+                    onChange={(e) => handleInputChange('type', e.target.value)}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="Full-time">Full-time</option>
+                    <option value="Part-time">Part-time</option>
+                    <option value="Contract">Contract</option>
+                    <option value="Freelance">Freelance</option>
+                    <option value="Internship">Internship</option>
+                  </select>
+                </div>
+              </div>
+            </div>
           </div>
 
+          {/* Location Details Section */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Requirements & Skills
-            </label>
-            <textarea
-              rows={3}
-              value={jobForm.requirements}
-              onChange={(e) => handleInputChange('requirements', e.target.value)}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-              placeholder="e.g., React, TypeScript, 5+ years experience, Bachelor's degree (separate with commas)"
-            />
+            <h3 className="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-200">Location Details</h3>
+            <div className="space-y-4">
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Location *
+                  </label>
+                  <input
+                    type="text"
+                    value={jobForm.location}
+                    onChange={(e) => handleInputChange('location', e.target.value)}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="e.g., New York, NY"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Location Type *
+                  </label>
+                  <select
+                    value={jobForm.locationType}
+                    onChange={(e) => handleInputChange('locationType', e.target.value)}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    {locationTypes.map((type) => (
+                      <option key={type} value={type}>{type}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Travel Percentage
+                </label>
+                <input
+                  type="text"
+                  value={jobForm.travelPercentage}
+                  onChange={(e) => handleInputChange('travelPercentage', e.target.value)}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="e.g., 10-20% or None"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Role Details Section */}
+          <div>
+            <h3 className="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-200">Role Details</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Seniority Level *
+                </label>
+                <select
+                  value={jobForm.seniorityLevel}
+                  onChange={(e) => handleInputChange('seniorityLevel', e.target.value)}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="">Select seniority level</option>
+                  {seniorityLevels.map((level) => (
+                    <option key={level} value={level}>{level}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Direct Reports
+                  </label>
+                  <input
+                    type="text"
+                    value={jobForm.directReports}
+                    onChange={(e) => handleInputChange('directReports', e.target.value)}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="e.g., 3-5 or None"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Indirect Reports
+                  </label>
+                  <input
+                    type="text"
+                    value={jobForm.indirectReports}
+                    onChange={(e) => handleInputChange('indirectReports', e.target.value)}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="e.g., 10-15 or None"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Required Skills Section */}
+          <div>
+            <h3 className="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-200">Required Skills</h3>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Skills & Requirements *
+              </label>
+              <textarea
+                rows={4}
+                value={jobForm.requirements}
+                onChange={(e) => handleInputChange('requirements', e.target.value)}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="e.g., ACAS/FCAS, Python, R, SQL, 5+ years actuarial experience (separate with commas)"
+              />
+            </div>
+          </div>
+
+          {/* Compensation Package Section */}
+          <div>
+            <h3 className="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-200">Compensation Package</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Currency *
+                </label>
+                <select
+                  value={jobForm.currency}
+                  onChange={(e) => handleInputChange('currency', e.target.value)}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  {currencies.map((curr) => (
+                    <option key={curr} value={curr}>{curr}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                <h4 className="font-medium text-gray-800 mb-3">Base Salary Range</h4>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Minimum ({jobForm.currency})
+                    </label>
+                    <input
+                      type="number"
+                      value={jobForm.baseSalaryMin}
+                      onChange={(e) => handleInputChange('baseSalaryMin', e.target.value)}
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="e.g., 80000"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Maximum ({jobForm.currency})
+                    </label>
+                    <input
+                      type="number"
+                      value={jobForm.baseSalaryMax}
+                      onChange={(e) => handleInputChange('baseSalaryMax', e.target.value)}
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="e.g., 120000"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                <h4 className="font-medium text-gray-800 mb-3">Bonus Range</h4>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Minimum ({jobForm.currency})
+                    </label>
+                    <input
+                      type="number"
+                      value={jobForm.bonusMin}
+                      onChange={(e) => handleInputChange('bonusMin', e.target.value)}
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="e.g., 10000"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Maximum ({jobForm.currency})
+                    </label>
+                    <input
+                      type="number"
+                      value={jobForm.bonusMax}
+                      onChange={(e) => handleInputChange('bonusMax', e.target.value)}
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="e.g., 30000"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
+                <h4 className="font-medium text-gray-800 mb-3">Benefits</h4>
+                <div className="space-y-3">
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="pension"
+                      checked={jobForm.benefits.pension}
+                      onChange={(e) => handleInputChange('benefits.pension', e.target.checked)}
+                      className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                    />
+                    <label htmlFor="pension" className="text-sm font-medium text-gray-700">
+                      Pension / 401(k)
+                    </label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="health"
+                      checked={jobForm.benefits.health}
+                      onChange={(e) => handleInputChange('benefits.health', e.target.checked)}
+                      className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                    />
+                    <label htmlFor="health" className="text-sm font-medium text-gray-700">
+                      Health Insurance
+                    </label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="dental"
+                      checked={jobForm.benefits.dental}
+                      onChange={(e) => handleInputChange('benefits.dental', e.target.checked)}
+                      className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                    />
+                    <label htmlFor="dental" className="text-sm font-medium text-gray-700">
+                      Dental Insurance
+                    </label>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Vacation / Holidays (days per year)
+                    </label>
+                    <input
+                      type="text"
+                      value={jobForm.benefits.vacation}
+                      onChange={(e) => handleInputChange('benefits.vacation', e.target.value)}
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="e.g., 20 days + 10 holidays"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Job Description with AI Generation */}
@@ -386,12 +704,12 @@ const EmployerDashboard: React.FC<EmployerDashboardProps> = ({ onBack, onAddJob 
           </div>
 
           {/* Salary Benchmark */}
-          {jobForm.salary && jobForm.title && jobForm.location && (
+          {jobForm.baseSalaryMin && jobForm.baseSalaryMax && jobForm.title && jobForm.location && (
             <div>
               <SalaryBenchmark
                 jobTitle={jobForm.title}
                 location={jobForm.location}
-                salary={jobForm.salary}
+                salary={`${jobForm.currency} ${jobForm.baseSalaryMin} - ${jobForm.baseSalaryMax}`}
                 jobType={jobForm.type}
                 requirements={jobForm.requirements}
                 onRatingReceived={setSalaryRating}
