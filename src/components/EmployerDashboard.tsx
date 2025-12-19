@@ -99,7 +99,8 @@ const EmployerDashboard: React.FC<EmployerDashboardProps> = ({ onBack, onAddJob 
   const [jobForm, setJobForm] = useState({
     title: '',
     company: '',
-    location: '',
+    city: '',
+    state: '',
     locationType: 'On-site',
     travelPercentage: '',
     salary: '',
@@ -178,13 +179,17 @@ const EmployerDashboard: React.FC<EmployerDashboardProps> = ({ onBack, onAddJob 
         ? ` + Bonus (${jobForm.currency} ${jobForm.bonusMin} - ${jobForm.bonusMax})`
         : '';
 
+      const fullLocation = jobForm.city && jobForm.state
+        ? `${jobForm.city}, ${jobForm.state}`
+        : 'Not specified';
+
       const prompt = `
         Generate a comprehensive and professional job description for the following position:
 
         Job Title: ${jobForm.title}
         Company: ${jobForm.company}
         Job Category: ${jobForm.jobCategory || 'Not specified'}
-        Location: ${jobForm.location || 'Not specified'} (${jobForm.locationType})
+        Location: ${fullLocation} (${jobForm.locationType})
         Travel: ${jobForm.travelPercentage || 'None'}
         Seniority Level: ${jobForm.seniorityLevel || 'Not specified'}
         Salary Range: ${salaryInfo}${bonusInfo}
@@ -247,7 +252,7 @@ const EmployerDashboard: React.FC<EmployerDashboardProps> = ({ onBack, onAddJob 
   };
 
   const handlePostJob = () => {
-    if (!jobForm.title || !jobForm.company || !jobForm.location || !jobForm.description) {
+    if (!jobForm.title || !jobForm.company || !jobForm.city || !jobForm.state || !jobForm.description) {
       alert('Please fill in all required fields.');
       return;
     }
@@ -265,11 +270,13 @@ const EmployerDashboard: React.FC<EmployerDashboardProps> = ({ onBack, onAddJob 
       salaryString += ` + Bonus (${jobForm.currency} ${jobForm.bonusMin} - ${jobForm.bonusMax})`;
     }
 
-    // Add job to global state for job seekers to see
+    const fullLocation = `${jobForm.city}, ${jobForm.state}`;
+
+    // Add job to global state for job seekers to see (only state visible)
     const jobForJobSeekers: Omit<Job, 'id' | 'posted'> = {
       title: jobForm.title,
       company: jobForm.company,
-      location: `${jobForm.location} (${jobForm.locationType})`,
+      location: `${jobForm.state} (${jobForm.locationType})`,
       type: jobForm.type,
       salary: salaryString,
       description: jobForm.description,
@@ -286,11 +293,12 @@ const EmployerDashboard: React.FC<EmployerDashboardProps> = ({ onBack, onAddJob 
     // Add to global jobs state
     onAddJob(jobForJobSeekers);
 
+    // For employer records, keep full city, state information
     const newJob: JobPosting = {
       id: Date.now().toString(),
       title: jobForm.title,
       company: jobForm.company,
-      location: `${jobForm.location} (${jobForm.locationType})`,
+      location: `${fullLocation} (${jobForm.locationType})`,
       salary: salaryString,
       requirements: jobForm.requirements.split(',').map(req => req.trim()).filter(req => req),
       description: jobForm.description,
@@ -304,7 +312,8 @@ const EmployerDashboard: React.FC<EmployerDashboardProps> = ({ onBack, onAddJob 
     setJobForm({
       title: '',
       company: '',
-      location: '',
+      city: '',
+      state: '',
       locationType: 'On-site',
       travelPercentage: '',
       salary: '',
@@ -420,17 +429,29 @@ const EmployerDashboard: React.FC<EmployerDashboardProps> = ({ onBack, onAddJob 
           <div>
             <h3 className="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-200">Location Details</h3>
             <div className="space-y-4">
-              <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid md:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Location *
+                    City *
                   </label>
                   <input
                     type="text"
-                    value={jobForm.location}
-                    onChange={(e) => handleInputChange('location', e.target.value)}
+                    value={jobForm.city}
+                    onChange={(e) => handleInputChange('city', e.target.value)}
                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="e.g., New York, NY"
+                    placeholder="e.g., New York"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    State *
+                  </label>
+                  <input
+                    type="text"
+                    value={jobForm.state}
+                    onChange={(e) => handleInputChange('state', e.target.value)}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="e.g., NY"
                   />
                 </div>
                 <div>
@@ -704,11 +725,11 @@ const EmployerDashboard: React.FC<EmployerDashboardProps> = ({ onBack, onAddJob 
           </div>
 
           {/* Salary Benchmark */}
-          {jobForm.baseSalaryMin && jobForm.baseSalaryMax && jobForm.title && jobForm.location && (
+          {jobForm.baseSalaryMin && jobForm.baseSalaryMax && jobForm.title && jobForm.city && jobForm.state && (
             <div>
               <SalaryBenchmark
                 jobTitle={jobForm.title}
-                location={jobForm.location}
+                location={`${jobForm.city}, ${jobForm.state}`}
                 salary={`${jobForm.currency} ${jobForm.baseSalaryMin} - ${jobForm.baseSalaryMax}`}
                 jobType={jobForm.type}
                 requirements={jobForm.requirements}
