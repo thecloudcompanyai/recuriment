@@ -1,19 +1,10 @@
 import React, { useState } from 'react';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { Star, FileText, Briefcase, Loader2, CheckCircle, AlertCircle, TrendingUp, Target } from 'lucide-react';
+import type { RatingResult } from '../types';
 
 interface ResumeRatingProps {
   onBack: () => void;
-}
-
-interface RatingResult {
-  overallScore: number;
-  strengths: string[];
-  weaknesses: string[];
-  suggestions: string[];
-  matchPercentage: number;
-  skillsMatch: string[];
-  missingSkills: string[];
 }
 
 const ResumeRating: React.FC<ResumeRatingProps> = ({ onBack }) => {

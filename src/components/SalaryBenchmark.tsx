@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { TrendingUp, DollarSign, Star, Loader2, AlertCircle, CheckCircle } from 'lucide-react';
+import type { SalaryRating } from '../types';
 
 interface SalaryBenchmarkProps {
   jobTitle: string;
@@ -9,13 +10,6 @@ interface SalaryBenchmarkProps {
   jobType: string;
   requirements: string;
   onRatingReceived?: (rating: SalaryRating) => void;
-}
-
-interface SalaryRating {
-  score: number;
-  feedback: string;
-  marketRange: string;
-  recommendation: string;
 }
 
 const SalaryBenchmark: React.FC<SalaryBenchmarkProps> = ({

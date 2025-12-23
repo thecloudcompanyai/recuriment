@@ -4,25 +4,7 @@ import JobSeekerDashboard from './components/JobSeekerDashboard';
 import EmployerDashboard from './components/EmployerDashboard';
 import AboutUs from './components/AboutUs';
 import ContactUs from './components/ContactUs';
-
-interface Job {
-  id: string;
-  title: string;
-  company: string;
-  location: string;
-  type: string;
-  salary: string;
-  posted: string;
-  description: string;
-  requirements: string[];
-  tags: string[];
-  salaryRating?: {
-    score: number;
-    feedback: string;
-    marketRange: string;
-    recommendation: string;
-  };
-}
+import type { Job } from './types';
 
 function App() {
   const [currentView, setCurrentView] = useState<'landing' | 'job-seeker' | 'employer' | 'about' | 'contact'>('landing');

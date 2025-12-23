@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import OnboardingOverlay from './OnboardingOverlay';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import SalaryBenchmark from './SalaryBenchmark';
+import type { Job, SalaryRating } from '../types';
 import {
   ArrowLeft,
   Building2,
@@ -40,25 +41,7 @@ interface JobPosting {
   type: string;
   posted: string;
   status: 'active' | 'draft' | 'closed';
-  salaryRating?: {
-    score: number;
-    feedback: string;
-    marketRange: string;
-    recommendation: string;
-  };
-}
-
-interface Job {
-  id: string;
-  title: string;
-  company: string;
-  location: string;
-  type: string;
-  salary: string;
-  posted: string;
-  description: string;
-  requirements: string[];
-  tags: string[];
+  salaryRating?: SalaryRating;
 }
 
 const EmployerDashboard: React.FC<EmployerDashboardProps> = ({ onBack, onAddJob }) => {
@@ -68,7 +51,7 @@ const EmployerDashboard: React.FC<EmployerDashboardProps> = ({ onBack, onAddJob 
   const [showOnboarding, setShowOnboarding] = useState(() => {
     return !localStorage.getItem('employer-onboarding-completed');
   });
-  const [salaryRating, setSalaryRating] = useState<any>(null);
+  const [salaryRating, setSalaryRating] = useState<SalaryRating | null>(null);
 
   const onboardingSteps = [
     {
@@ -118,6 +101,15 @@ const EmployerDashboard: React.FC<EmployerDashboardProps> = ({ onBack, onAddJob 
       health: false,
       dental: false,
       vacation: ''
+    },
+    perks: {
+      rsuOrStockOptions: '',
+      equityOrProfitSharing: '',
+      signOnBonus: '',
+      relocationAssistance: '',
+      temporaryHousing: '',
+      otherPerks: '',
+      visaSponsorship: ''
     },
     seniorityLevel: '',
     directReports: '',
@@ -184,6 +176,12 @@ const EmployerDashboard: React.FC<EmployerDashboardProps> = ({ onBack, onAddJob 
       setJobForm(prev => ({
         ...prev,
         benefits: { ...prev.benefits, [benefitField]: value }
+      }));
+    } else if (field.startsWith('perks.')) {
+      const perkField = field.split('.')[1];
+      setJobForm(prev => ({
+        ...prev,
+        perks: { ...prev.perks, [perkField]: value }
       }));
     } else {
       setJobForm(prev => ({ ...prev, [field]: value }));
@@ -401,6 +399,15 @@ const EmployerDashboard: React.FC<EmployerDashboardProps> = ({ onBack, onAddJob 
         health: false,
         dental: false,
         vacation: ''
+      },
+      perks: {
+        rsuOrStockOptions: '',
+        equityOrProfitSharing: '',
+        signOnBonus: '',
+        relocationAssistance: '',
+        temporaryHousing: '',
+        otherPerks: '',
+        visaSponsorship: ''
       },
       seniorityLevel: '',
       directReports: '',
@@ -934,6 +941,102 @@ const EmployerDashboard: React.FC<EmployerDashboardProps> = ({ onBack, onAddJob 
                       onChange={(e) => handleInputChange('benefits.vacation', e.target.value)}
                       className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       placeholder="e.g., 20 days + 10 holidays"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
+                <h4 className="font-medium text-gray-800 mb-3">Perks (Optional)</h4>
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      RSU / Stock Options / Other
+                    </label>
+                    <input
+                      type="text"
+                      value={jobForm.perks.rsuOrStockOptions}
+                      onChange={(e) => handleInputChange('perks.rsuOrStockOptions', e.target.value)}
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="e.g., annual RSU grant or stock options"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Equity Share / Profit Sharing
+                    </label>
+                    <input
+                      type="text"
+                      value={jobForm.perks.equityOrProfitSharing}
+                      onChange={(e) => handleInputChange('perks.equityOrProfitSharing', e.target.value)}
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="e.g., profit sharing, equity %, carried interest"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Sign-on Bonus
+                    </label>
+                    <input
+                      type="text"
+                      value={jobForm.perks.signOnBonus}
+                      onChange={(e) => handleInputChange('perks.signOnBonus', e.target.value)}
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="e.g., one-time bonus amount or range"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Relocation Assistance
+                    </label>
+                    <input
+                      type="text"
+                      value={jobForm.perks.relocationAssistance}
+                      onChange={(e) => handleInputChange('perks.relocationAssistance', e.target.value)}
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="e.g., relocation package, moving expenses"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Temporary Housing
+                    </label>
+                    <input
+                      type="text"
+                      value={jobForm.perks.temporaryHousing}
+                      onChange={(e) => handleInputChange('perks.temporaryHousing', e.target.value)}
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="e.g., 3 months corporate housing"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Others
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={jobForm.perks.otherPerks}
+                      onChange={(e) => handleInputChange('perks.otherPerks', e.target.value)}
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="e.g., wellness stipend, learning budget, flexible hours"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Visa Sponsorship (e.g., H1B transfers?)
+                    </label>
+                    <input
+                      type="text"
+                      value={jobForm.perks.visaSponsorship}
+                      onChange={(e) => handleInputChange('perks.visaSponsorship', e.target.value)}
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="e.g., H1B transfers supported, TN, no sponsorship, etc."
                     />
                   </div>
                 </div>

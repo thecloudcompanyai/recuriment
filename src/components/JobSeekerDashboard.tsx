@@ -3,6 +3,7 @@ import OnboardingOverlay from './OnboardingOverlay';
 import AIResumeBuilder from './AIResumeBuilder';
 import ResumeRating from './ResumeRating';
 import AIChatbot from './AIChatbot';
+import type { Job, ResumeData } from '../types';
 import { 
   User, 
   FileText, 
@@ -27,47 +28,6 @@ import {
 interface JobSeekerDashboardProps {
   onBack: () => void;
   jobs: Job[];
-}
-
-interface Job {
-  id: string;
-  title: string;
-  company: string;
-  location: string;
-  type: string;
-  salary: string;
-  posted: string;
-  description: string;
-  requirements: string[];
-  tags: string[];
-  salaryRating?: {
-    score: number;
-    feedback: string;
-    marketRange: string;
-    recommendation: string;
-  };
-}
-
-interface ResumeData {
-  personalInfo: {
-    name: string;
-    email: string;
-    phone: string;
-    location: string;
-    summary: string;
-  };
-  experience: Array<{
-    title: string;
-    company: string;
-    duration: string;
-    description: string;
-  }>;
-  education: Array<{
-    degree: string;
-    school: string;
-    year: string;
-  }>;
-  skills: string[];
 }
 
 const JobSeekerDashboard: React.FC<JobSeekerDashboardProps> = ({ onBack, jobs }) => {

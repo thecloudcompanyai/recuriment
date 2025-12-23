@@ -1,28 +1,7 @@
 import React, { useState } from 'react';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { Sparkles, Download, Save, Loader2, User, Briefcase, GraduationCap, Award } from 'lucide-react';
-
-interface ResumeData {
-  personalInfo: {
-    name: string;
-    email: string;
-    phone: string;
-    location: string;
-    summary: string;
-  };
-  experience: Array<{
-    title: string;
-    company: string;
-    duration: string;
-    description: string;
-  }>;
-  education: Array<{
-    degree: string;
-    school: string;
-    year: string;
-  }>;
-  skills: string[];
-}
+import type { ResumeData } from '../types';
 
 interface AIResumeBuilderProps {
   onSave: (resumeData: ResumeData) => void;

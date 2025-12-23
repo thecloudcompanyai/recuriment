@@ -1,34 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { MessageCircle, Send, Bot, User, Loader2, Sparkles, ArrowLeft } from 'lucide-react';
+import type { ResumeData } from '../types';
 
 interface Message {
   id: string;
   type: 'user' | 'bot';
   content: string;
   timestamp: Date;
-}
-
-interface ResumeData {
-  personalInfo: {
-    name: string;
-    email: string;
-    phone: string;
-    location: string;
-    summary: string;
-  };
-  experience: Array<{
-    title: string;
-    company: string;
-    duration: string;
-    description: string;
-  }>;
-  education: Array<{
-    degree: string;
-    school: string;
-    year: string;
-  }>;
-  skills: string[];
 }
 
 interface AIChatbotProps {
