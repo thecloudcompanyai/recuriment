@@ -105,6 +105,7 @@ const EmployerDashboard: React.FC<EmployerDashboardProps> = ({ onBack, onAddJob 
     travelPercentage: '',
     salary: '',
     currency: 'USD',
+    customCurrency: '',
     baseSalaryMin: '',
     baseSalaryMax: '',
     bonusMin: '',
@@ -140,7 +141,18 @@ const EmployerDashboard: React.FC<EmployerDashboardProps> = ({ onBack, onAddJob 
 
   const genAI = new GoogleGenerativeAI('AIzaSyDeuDXluDkLSNaaJBzsR30uilQ4kRXVaAw');
 
-  const currencies = ['USD', 'EUR', 'GBP', 'CAD', 'AUD', 'CHF', 'JPY', 'CNY', 'INR'];
+  const currencies = [
+    { code: 'USD', name: 'US Dollar ($)' },
+    { code: 'CAD', name: 'Canadian Dollar (C$)' },
+    { code: 'EUR', name: 'Euro (€)' },
+    { code: 'GBP', name: 'British Pound (£)' },
+    { code: 'AUD', name: 'Australian Dollar (A$)' },
+    { code: 'SGD', name: 'Singapore Dollar (S$)' },
+    { code: 'CHF', name: 'Swiss Franc (CHF)' },
+    { code: 'JPY', name: 'Japanese Yen (¥)' },
+    { code: 'NZD', name: 'New Zealand Dollar (NZ$)' },
+    { code: 'OTHER', name: 'Other (Custom)' }
+  ];
   const locationTypes = ['On-site', 'Remote', 'Hybrid'];
   const seniorityLevels = ['Individual Contributor', 'Manager', 'Senior Manager', 'Director', 'Senior Director', 'VP', 'Senior VP', 'C-Level'];
   const jobCategories = [
@@ -171,12 +183,15 @@ const EmployerDashboard: React.FC<EmployerDashboardProps> = ({ onBack, onAddJob 
 
     setIsGenerating(true);
     try {
+      // Get the actual currency to use
+      const actualCurrency = jobForm.currency === 'OTHER' ? jobForm.customCurrency : jobForm.currency;
+
       const salaryInfo = jobForm.baseSalaryMin && jobForm.baseSalaryMax
-        ? `${jobForm.currency} ${jobForm.baseSalaryMin} - ${jobForm.baseSalaryMax}`
+        ? `${actualCurrency} ${jobForm.baseSalaryMin} - ${jobForm.baseSalaryMax}`
         : 'Competitive';
 
       const bonusInfo = jobForm.bonusMin && jobForm.bonusMax
-        ? ` + Bonus (${jobForm.currency} ${jobForm.bonusMin} - ${jobForm.bonusMax})`
+        ? ` + Bonus (${actualCurrency} ${jobForm.bonusMin} - ${jobForm.bonusMax})`
         : '';
 
       const fullLocation = jobForm.city && jobForm.state
@@ -257,17 +272,26 @@ const EmployerDashboard: React.FC<EmployerDashboardProps> = ({ onBack, onAddJob 
       return;
     }
 
+    // Check if custom currency is required
+    if (jobForm.currency === 'OTHER' && !jobForm.customCurrency) {
+      alert('Please enter a custom currency.');
+      return;
+    }
+
+    // Get the actual currency to use
+    const actualCurrency = jobForm.currency === 'OTHER' ? jobForm.customCurrency : jobForm.currency;
+
     // Construct salary string
     let salaryString = '';
     if (jobForm.baseSalaryMin && jobForm.baseSalaryMax) {
-      salaryString = `${jobForm.currency} ${jobForm.baseSalaryMin} - ${jobForm.baseSalaryMax}`;
+      salaryString = `${actualCurrency} ${jobForm.baseSalaryMin} - ${jobForm.baseSalaryMax}`;
     } else {
       salaryString = 'Competitive';
     }
 
     // Add bonus info if provided
     if (jobForm.bonusMin && jobForm.bonusMax) {
-      salaryString += ` + Bonus (${jobForm.currency} ${jobForm.bonusMin} - ${jobForm.bonusMax})`;
+      salaryString += ` + Bonus (${actualCurrency} ${jobForm.bonusMin} - ${jobForm.bonusMax})`;
     }
 
     const fullLocation = `${jobForm.city}, ${jobForm.state}`;
@@ -318,6 +342,7 @@ const EmployerDashboard: React.FC<EmployerDashboardProps> = ({ onBack, onAddJob 
       travelPercentage: '',
       salary: '',
       currency: 'USD',
+      customCurrency: '',
       baseSalaryMin: '',
       baseSalaryMax: '',
       bonusMin: '',
@@ -565,17 +590,33 @@ const EmployerDashboard: React.FC<EmployerDashboardProps> = ({ onBack, onAddJob 
                   className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
                   {currencies.map((curr) => (
-                    <option key={curr} value={curr}>{curr}</option>
+                    <option key={curr.code} value={curr.code}>{curr.name}</option>
                   ))}
                 </select>
               </div>
+
+              {jobForm.currency === 'OTHER' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Custom Currency *
+                  </label>
+                  <input
+                    type="text"
+                    value={jobForm.customCurrency}
+                    onChange={(e) => handleInputChange('customCurrency', e.target.value)}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="e.g., BTC, USDT, INR, etc."
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Enter your preferred currency code or symbol</p>
+                </div>
+              )}
 
               <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
                 <h4 className="font-medium text-gray-800 mb-3">Base Salary Range</h4>
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Minimum ({jobForm.currency})
+                      Minimum ({jobForm.currency === 'OTHER' ? jobForm.customCurrency || 'Currency' : jobForm.currency})
                     </label>
                     <input
                       type="number"
@@ -587,7 +628,7 @@ const EmployerDashboard: React.FC<EmployerDashboardProps> = ({ onBack, onAddJob 
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Maximum ({jobForm.currency})
+                      Maximum ({jobForm.currency === 'OTHER' ? jobForm.customCurrency || 'Currency' : jobForm.currency})
                     </label>
                     <input
                       type="number"
@@ -605,7 +646,7 @@ const EmployerDashboard: React.FC<EmployerDashboardProps> = ({ onBack, onAddJob 
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Minimum ({jobForm.currency})
+                      Minimum ({jobForm.currency === 'OTHER' ? jobForm.customCurrency || 'Currency' : jobForm.currency})
                     </label>
                     <input
                       type="number"
@@ -617,7 +658,7 @@ const EmployerDashboard: React.FC<EmployerDashboardProps> = ({ onBack, onAddJob 
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Maximum ({jobForm.currency})
+                      Maximum ({jobForm.currency === 'OTHER' ? jobForm.customCurrency || 'Currency' : jobForm.currency})
                     </label>
                     <input
                       type="number"
@@ -730,7 +771,7 @@ const EmployerDashboard: React.FC<EmployerDashboardProps> = ({ onBack, onAddJob 
               <SalaryBenchmark
                 jobTitle={jobForm.title}
                 location={`${jobForm.city}, ${jobForm.state}`}
-                salary={`${jobForm.currency} ${jobForm.baseSalaryMin} - ${jobForm.baseSalaryMax}`}
+                salary={`${jobForm.currency === 'OTHER' ? jobForm.customCurrency : jobForm.currency} ${jobForm.baseSalaryMin} - ${jobForm.baseSalaryMax}`}
                 jobType={jobForm.type}
                 requirements={jobForm.requirements}
                 onRatingReceived={setSalaryRating}
