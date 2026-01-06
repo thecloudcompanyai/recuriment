@@ -5,6 +5,7 @@ import SalaryBenchmark from './SalaryBenchmark';
 import type { Job, SalaryRating } from '../types';
 import {
   ArrowLeft,
+  ArrowRight,
   Building2,
   MapPin,
   DollarSign,
@@ -52,6 +53,13 @@ const EmployerDashboard: React.FC<EmployerDashboardProps> = ({ onBack, onAddJob 
     return !localStorage.getItem('employer-onboarding-completed');
   });
   const [salaryRating, setSalaryRating] = useState<SalaryRating | null>(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [clientLogin, setClientLogin] = useState({
+    email: '',
+    password: ''
+  });
+  const [currentStep, setCurrentStep] = useState(1); // 1 = Job Posting Form, 2 = Search Type Selection
+  const [selectedSearchType, setSelectedSearchType] = useState<string>('');
 
   const onboardingSteps = [
     {
@@ -121,7 +129,12 @@ const EmployerDashboard: React.FC<EmployerDashboardProps> = ({ onBack, onAddJob 
     jobCategory: '',
     requirements: '',
     description: '',
-    type: 'Full-time'
+    type: 'Full-time',
+    confidentialSearch: false,
+    sellingPoints: '',
+    applicationProcess: '',
+    targetStartDate: '',
+    searchType: ''
   });
   const [postedJobs, setPostedJobs] = useState<JobPosting[]>([
     {
@@ -153,7 +166,53 @@ const EmployerDashboard: React.FC<EmployerDashboardProps> = ({ onBack, onAddJob 
     { code: 'OTHER', name: 'Other (Custom)' }
   ];
 
-  const countries = ['United States', 'Canada', 'United Kingdom', 'Germany', 'France', 'Australia', 'Singapore', 'Japan', 'Switzerland', 'Netherlands', 'Ireland', 'Other'];
+  const countries = [
+    // North America
+    'United States',
+    'Canada',
+    'Mexico',
+    'Bermuda',
+    'Cayman Islands',
+    'Barbados',
+    // Europe
+    'England',
+    'Scotland',
+    'Ireland',
+    'Northern Ireland',
+    'Switzerland',
+    'Germany',
+    'Austria',
+    'Luxembourg',
+    'Netherlands',
+    'Belgium',
+    'France',
+    'Spain',
+    'Portugal',
+    'Czech Republic',
+    'Gibraltar',
+    // Asia Pacific
+    'Australia',
+    'New Zealand',
+    'India',
+    'China',
+    'Hong Kong',
+    'Singapore',
+    'Malaysia',
+    'Thailand',
+    // Middle East
+    'UAE',
+    'Kuwait',
+    'Saudi Arabia',
+    // Latin America
+    'Colombia',
+    'Brazil',
+    'Argentina',
+    'Peru',
+    // Africa
+    'South Africa',
+    // Other
+    'Other'
+  ];
 
   const usStates = ['AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA', 'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MD', 'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ', 'NM', 'NY', 'NC', 'ND', 'OH', 'OK', 'OR', 'PA', 'RI', 'SC', 'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY', 'DC'];
 
@@ -281,10 +340,26 @@ const EmployerDashboard: React.FC<EmployerDashboardProps> = ({ onBack, onAddJob 
     }
   };
 
-  const handlePostJob = () => {
+  const handleNextStep = () => {
     // Validation
     if (!jobForm.title || !jobForm.company || !jobForm.description) {
       alert('Please fill in all required fields (Title, Company, Description).');
+      return;
+    }
+
+    // Validate new required fields
+    if (!jobForm.sellingPoints) {
+      alert('Please provide selling points (Why this role?). This helps recruiters attract candidates.');
+      return;
+    }
+
+    if (!jobForm.applicationProcess) {
+      alert('Please provide application process instructions. Recruiters need to know how to submit candidates.');
+      return;
+    }
+
+    if (!jobForm.targetStartDate) {
+      alert('Please select a target start date. This helps prioritize the search urgency.');
       return;
     }
 
@@ -305,6 +380,146 @@ const EmployerDashboard: React.FC<EmployerDashboardProps> = ({ onBack, onAddJob 
       alert('Please enter a custom currency.');
       return;
     }
+
+    // Move to step 2 (Search Type Selection)
+    setCurrentStep(2);
+  };
+
+  const handleFinalSubmit = () => {
+    // Validate search type is selected
+    if (!selectedSearchType) {
+      alert('Please select a search type to proceed.');
+      return;
+    }
+
+    // Update jobForm with selected search type
+    const finalJobForm = { ...jobForm, searchType: selectedSearchType };
+
+    // Get the actual currency to use
+    const actualCurrency = finalJobForm.currency === 'OTHER' ? finalJobForm.customCurrency : finalJobForm.currency;
+
+    // Construct salary string
+    let salaryString = '';
+    if (finalJobForm.baseSalaryMin && finalJobForm.baseSalaryMax) {
+      salaryString = `${actualCurrency} ${finalJobForm.baseSalaryMin} - ${finalJobForm.baseSalaryMax}`;
+    } else {
+      salaryString = 'Competitive';
+    }
+
+    // Add bonus info if provided
+    if (finalJobForm.bonusTarget && finalJobForm.bonusMax) {
+      if (finalJobForm.bonusType === 'percentage') {
+        salaryString += ` + Bonus (${finalJobForm.bonusTarget}% - ${finalJobForm.bonusMax}%)`;
+      } else {
+        salaryString += ` + Bonus (${actualCurrency} ${finalJobForm.bonusTarget} - ${finalJobForm.bonusMax})`;
+      }
+    }
+
+    // Construct location string
+    let locationString = '';
+    if (finalJobForm.locationType === 'Remote') {
+      locationString = finalJobForm.state
+        ? `${finalJobForm.state}, ${finalJobForm.country} (Remote)`
+        : `${finalJobForm.country} (Remote - Work from anywhere)`;
+    } else {
+      if (finalJobForm.country === 'United States' || finalJobForm.country === 'Canada') {
+        locationString = `${finalJobForm.city}, ${finalJobForm.state} (${finalJobForm.locationType})`;
+      } else {
+        locationString = `${finalJobForm.city}, ${finalJobForm.country} (${finalJobForm.locationType})`;
+      }
+    }
+
+    // Add job to global state for job seekers to see
+    const jobForJobSeekers: Omit<Job, 'id' | 'posted'> = {
+      title: finalJobForm.title,
+      company: finalJobForm.company,
+      location: locationString,
+      type: finalJobForm.type,
+      salary: salaryString,
+      description: finalJobForm.description,
+      requirements: finalJobForm.requirements.split(',').map(req => req.trim()).filter(req => req),
+      tags: [
+        finalJobForm.type,
+        finalJobForm.locationType,
+        finalJobForm.jobCategory,
+        finalJobForm.seniorityLevel,
+        salaryString.includes(actualCurrency) ? 'Competitive Salary' : 'Salary Negotiable'
+      ].filter(tag => tag)
+    };
+
+    // Add to global jobs state
+    onAddJob(jobForJobSeekers);
+
+    // For employer records
+    const newJob: JobPosting = {
+      id: Date.now().toString(),
+      title: finalJobForm.title,
+      company: finalJobForm.company,
+      location: locationString,
+      salary: salaryString,
+      requirements: finalJobForm.requirements.split(',').map(req => req.trim()).filter(req => req),
+      description: finalJobForm.description,
+      type: finalJobForm.type,
+      posted: 'Just now',
+      status: 'active',
+      salaryRating: salaryRating
+    };
+
+    setPostedJobs(prev => [newJob, ...prev]);
+    setJobForm({
+      title: '',
+      company: '',
+      country: 'United States',
+      city: '',
+      state: '',
+      locationType: 'On-site',
+      daysInOffice: '',
+      travelPercentage: '',
+      salary: '',
+      currency: 'USD',
+      customCurrency: '',
+      baseSalaryMin: '',
+      baseSalaryMax: '',
+      bonusTarget: '',
+      bonusMax: '',
+      bonusType: 'amount',
+      benefits: {
+        pension: false,
+        health: false,
+        dental: false,
+        vacation: ''
+      },
+      perks: {
+        rsuOrStockOptions: '',
+        equityOrProfitSharing: '',
+        signOnBonus: '',
+        relocationAssistance: '',
+        temporaryHousing: '',
+        otherPerks: '',
+        visaSponsorship: ''
+      },
+      seniorityLevel: '',
+      directReports: '',
+      indirectReports: '',
+      reportsToName: '',
+      reportsToTitle: '',
+      dottedLineToName: '',
+      dottedLineToTitle: '',
+      jobCategory: '',
+      requirements: '',
+      description: '',
+      type: 'Full-time',
+      confidentialSearch: false,
+      sellingPoints: '',
+      applicationProcess: '',
+      targetStartDate: '',
+      searchType: ''
+    });
+    setSelectedSearchType('');
+    setCurrentStep(1);
+    alert('Job posted successfully!');
+    setActiveTab('manage-jobs');
+  };
 
     // Get the actual currency to use
     const actualCurrency = jobForm.currency === 'OTHER' ? jobForm.customCurrency : jobForm.currency;
@@ -419,7 +634,12 @@ const EmployerDashboard: React.FC<EmployerDashboardProps> = ({ onBack, onAddJob 
       jobCategory: '',
       requirements: '',
       description: '',
-      type: 'Full-time'
+      type: 'Full-time',
+      confidentialSearch: false,
+      sellingPoints: '',
+      applicationProcess: '',
+      targetStartDate: '',
+      searchType: ''
     });
     alert('Job posted successfully!');
     setActiveTab('manage-jobs');
@@ -437,11 +657,97 @@ const EmployerDashboard: React.FC<EmployerDashboardProps> = ({ onBack, onAddJob 
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-4 lg:p-8">
-        <div className="space-y-8">
-          {/* Basic Information Section */}
-          <div>
-            <h3 className="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-200">Basic Information</h3>
+      {/* Client Login Section */}
+      {!isLoggedIn && (
+        <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-4 lg:p-8 mb-8">
+          <h3 className="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-200">Client Login</h3>
+          <div className="space-y-4">
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Email *
+                </label>
+                <input
+                  type="email"
+                  value={clientLogin.email}
+                  onChange={(e) => setClientLogin(prev => ({ ...prev, email: e.target.value }))}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="your.email@company.com"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Password *
+                </label>
+                <input
+                  type="password"
+                  value={clientLogin.password}
+                  onChange={(e) => setClientLogin(prev => ({ ...prev, password: e.target.value }))}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Enter your password"
+                />
+              </div>
+            </div>
+            <div className="flex justify-end">
+              <button
+                onClick={() => {
+                  if (clientLogin.email && clientLogin.password) {
+                    setIsLoggedIn(true);
+                  } else {
+                    alert('Please enter both email and password');
+                  }
+                }}
+                className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg font-semibold hover:from-blue-700 hover:to-blue-800 transition-all"
+              >
+                Login
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isLoggedIn && (
+        <>
+          {currentStep === 1 ? (
+            <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-4 lg:p-8">
+              {/* Logged In Header */}
+              <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center">
+                    <Users className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-700">Logged in as</p>
+                    <p className="text-sm text-gray-600">{clientLogin.email}</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    setIsLoggedIn(false);
+                    setClientLogin({ email: '', password: '' });
+                    setCurrentStep(1);
+                  }}
+                  className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Logout
+                </button>
+              </div>
+
+              {/* Progress Indicator */}
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-gray-600">Step 1 of 2</span>
+                  <span className="text-sm font-medium text-gray-600">Job Details</span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div className="bg-blue-600 h-2 rounded-full" style={{ width: '50%' }}></div>
+                </div>
+              </div>
+
+              <div className="space-y-8">
+            {/* Basic Information Section */}
+            <div>
+              <h3 className="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-200">Basic Information</h3>
             <div className="space-y-4">
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
@@ -1082,6 +1388,83 @@ const EmployerDashboard: React.FC<EmployerDashboardProps> = ({ onBack, onAddJob 
             </p>
           </div>
 
+          {/* Recruitment Details Section */}
+          <div>
+            <h3 className="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-200">Recruitment Details</h3>
+            <div className="space-y-4">
+              {/* Confidential Search */}
+              <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+                <div className="flex items-start space-x-3">
+                  <input
+                    type="checkbox"
+                    id="confidentialSearch"
+                    checked={jobForm.confidentialSearch}
+                    onChange={(e) => handleInputChange('confidentialSearch', e.target.checked)}
+                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 mt-1"
+                  />
+                  <div className="flex-1">
+                    <label htmlFor="confidentialSearch" className="text-sm font-medium text-gray-700 block mb-1">
+                      Confidential Search
+                    </label>
+                    <p className="text-xs text-gray-600">
+                      If checked, recruiters cannot use the company name in their outreach. This is important for confidential searches where the company identity must remain private.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Selling Points */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Why This Role? (Selling Points) *
+                </label>
+                <textarea
+                  rows={3}
+                  value={jobForm.sellingPoints}
+                  onChange={(e) => handleInputChange('sellingPoints', e.target.value)}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="e.g., Equity available, Rapid growth, New department, Cutting-edge technology, Strong leadership team, Work-life balance, etc. These are the 'hooks' recruiters use to attract passive candidates."
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Provide compelling reasons why candidates should be interested in this role. These selling points help recruiters attract passive candidates.
+                </p>
+              </div>
+
+              {/* Application Process */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Application Process / Submission Instructions *
+                </label>
+                <textarea
+                  rows={3}
+                  value={jobForm.applicationProcess}
+                  onChange={(e) => handleInputChange('applicationProcess', e.target.value)}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="e.g., Submit through our ATS at [link], or email applications to [email]. Include: resume, cover letter, and portfolio. OR Submit directly through this TalentConnect portal."
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Specify whether recruiters should submit candidates through this portal, an external ATS, or provide a submissions link/email. Include any specific instructions or requirements.
+                </p>
+              </div>
+
+              {/* Target Start Date */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Target Start Date *
+                </label>
+                <input
+                  type="date"
+                  value={jobForm.targetStartDate}
+                  onChange={(e) => handleInputChange('targetStartDate', e.target.value)}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  The desired start date for the candidate. This helps recruiters prioritize the urgency of the search and manage candidate expectations.
+                </p>
+              </div>
+            </div>
+          </div>
+
           {/* Salary Benchmark */}
           {jobForm.baseSalaryMin && jobForm.baseSalaryMax && jobForm.title && jobForm.city && jobForm.state && (
             <div>
@@ -1117,16 +1500,263 @@ const EmployerDashboard: React.FC<EmployerDashboardProps> = ({ onBack, onAddJob 
                 <span className="sm:hidden">Save</span>
               </button>
               <button
-                onClick={handlePostJob}
+                onClick={handleNextStep}
                 className="px-4 py-2 lg:px-6 lg:py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg font-semibold hover:from-blue-700 hover:to-blue-800 transition-all flex items-center justify-center space-x-2 text-sm lg:text-base"
               >
-                <Briefcase className="w-5 h-5" />
-                <span>Post Job</span>
+                <ArrowRight className="w-5 h-5" />
+                <span>Continue to Search Type</span>
               </button>
             </div>
           </div>
         </div>
       </div>
+          ) : (
+            <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-4 lg:p-8">
+              {/* Logged In Header */}
+              <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center">
+                    <Users className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-700">Logged in as</p>
+                    <p className="text-sm text-gray-600">{clientLogin.email}</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    setIsLoggedIn(false);
+                    setClientLogin({ email: '', password: '' });
+                    setCurrentStep(1);
+                  }}
+                  className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Logout
+                </button>
+              </div>
+
+              {/* Progress Indicator */}
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-gray-600">Step 2 of 2</span>
+                  <span className="text-sm font-medium text-gray-600">Search Type Selection</span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div className="bg-blue-600 h-2 rounded-full" style={{ width: '100%' }}></div>
+                </div>
+              </div>
+
+              {/* Job Summary */}
+              <div className="mb-8 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <h3 className="text-sm font-semibold text-gray-800 mb-2">Job Summary</h3>
+                <div className="grid md:grid-cols-2 gap-2 text-sm text-gray-600">
+                  <div><span className="font-medium">Title:</span> {jobForm.title}</div>
+                  <div><span className="font-medium">Company:</span> {jobForm.company}</div>
+                  <div><span className="font-medium">Location:</span> {jobForm.city && jobForm.state ? `${jobForm.city}, ${jobForm.state}` : jobForm.country}</div>
+                  <div><span className="font-medium">Type:</span> {jobForm.type}</div>
+                </div>
+              </div>
+
+              {/* Search Type Selection */}
+              <div>
+                <h2 className="text-2xl lg:text-3xl font-bold text-gray-800 mb-2">Choose Your Search Type</h2>
+                <p className="text-gray-600 mb-6">Select the recruitment model that best fits your hiring needs</p>
+
+                <div className="space-y-4">
+                  {/* Contingency */}
+                  <div
+                    onClick={() => setSelectedSearchType('Contingency')}
+                    className={`p-6 rounded-xl border-2 cursor-pointer transition-all ${
+                      selectedSearchType === 'Contingency'
+                        ? 'border-blue-600 bg-blue-50 shadow-md'
+                        : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-center space-x-3">
+                        <input
+                          type="radio"
+                          name="searchType"
+                          value="Contingency"
+                          checked={selectedSearchType === 'Contingency'}
+                          onChange={() => setSelectedSearchType('Contingency')}
+                          className="w-5 h-5 text-blue-600 focus:ring-blue-500"
+                        />
+                        <h3 className="text-xl font-bold text-gray-900">Contingency</h3>
+                      </div>
+                      {selectedSearchType === 'Contingency' && (
+                        <CheckCircle className="w-6 h-6 text-blue-600" />
+                      )}
+                    </div>
+                    <p className="text-gray-700 mb-3 ml-8">
+                      "No Win, No Fee." Multiple agencies might compete to fill the position. You only pay when a candidate is successfully placed.
+                    </p>
+                    <div className="ml-8 p-3 bg-white rounded-lg border border-gray-200">
+                      <p className="text-sm font-medium text-gray-800 mb-1">Fee Structure:</p>
+                      <p className="text-sm text-gray-600">Percentage of salary (e.g., 15-25% of first-year compensation)</p>
+                    </div>
+                  </div>
+
+                  {/* Retained */}
+                  <div
+                    onClick={() => setSelectedSearchType('Retained')}
+                    className={`p-6 rounded-xl border-2 cursor-pointer transition-all ${
+                      selectedSearchType === 'Retained'
+                        ? 'border-blue-600 bg-blue-50 shadow-md'
+                        : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-center space-x-3">
+                        <input
+                          type="radio"
+                          name="searchType"
+                          value="Retained"
+                          checked={selectedSearchType === 'Retained'}
+                          onChange={() => setSelectedSearchType('Retained')}
+                          className="w-5 h-5 text-blue-600 focus:ring-blue-500"
+                        />
+                        <h3 className="text-xl font-bold text-gray-900">Retained</h3>
+                      </div>
+                      {selectedSearchType === 'Retained' && (
+                        <CheckCircle className="w-6 h-6 text-blue-600" />
+                      )}
+                    </div>
+                    <p className="text-gray-700 mb-3 ml-8">
+                      Exclusive, high-level search with upfront payment. Best for senior executive roles requiring dedicated, focused recruitment efforts.
+                    </p>
+                    <div className="ml-8 p-3 bg-white rounded-lg border border-gray-200">
+                      <p className="text-sm font-medium text-gray-800 mb-1">Fee Structure:</p>
+                      <p className="text-sm text-gray-600">Total fee split into milestones (e.g., 1/3 upfront, 1/3 at midpoint, 1/3 on placement)</p>
+                    </div>
+                  </div>
+
+                  {/* Exclusive */}
+                  <div
+                    onClick={() => setSelectedSearchType('Exclusive')}
+                    className={`p-6 rounded-xl border-2 cursor-pointer transition-all ${
+                      selectedSearchType === 'Exclusive'
+                        ? 'border-blue-600 bg-blue-50 shadow-md'
+                        : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-center space-x-3">
+                        <input
+                          type="radio"
+                          name="searchType"
+                          value="Exclusive"
+                          checked={selectedSearchType === 'Exclusive'}
+                          onChange={() => setSelectedSearchType('Exclusive')}
+                          className="w-5 h-5 text-blue-600 focus:ring-blue-500"
+                        />
+                        <h3 className="text-xl font-bold text-gray-900">Exclusive</h3>
+                      </div>
+                      {selectedSearchType === 'Exclusive' && (
+                        <CheckCircle className="w-6 h-6 text-blue-600" />
+                      )}
+                    </div>
+                    <p className="text-gray-700 mb-3 ml-8">
+                      Only one agency has the right to fill the position for a set period. Lower risk than contingency with dedicated focus.
+                    </p>
+                    <div className="ml-8 p-3 bg-white rounded-lg border border-gray-200">
+                      <p className="text-sm font-medium text-gray-800 mb-1">Fee Structure:</p>
+                      <p className="text-sm text-gray-600">Percentage (typically lower than contingency, e.g., 12-20% of first-year compensation)</p>
+                    </div>
+                  </div>
+
+                  {/* Contract */}
+                  <div
+                    onClick={() => setSelectedSearchType('Contract')}
+                    className={`p-6 rounded-xl border-2 cursor-pointer transition-all ${
+                      selectedSearchType === 'Contract'
+                        ? 'border-blue-600 bg-blue-50 shadow-md'
+                        : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-center space-x-3">
+                        <input
+                          type="radio"
+                          name="searchType"
+                          value="Contract"
+                          checked={selectedSearchType === 'Contract'}
+                          onChange={() => setSelectedSearchType('Contract')}
+                          className="w-5 h-5 text-blue-600 focus:ring-blue-500"
+                        />
+                        <h3 className="text-xl font-bold text-gray-900">Contract</h3>
+                      </div>
+                      {selectedSearchType === 'Contract' && (
+                        <CheckCircle className="w-6 h-6 text-blue-600" />
+                      )}
+                    </div>
+                    <p className="text-gray-700 mb-3 ml-8">
+                      Temporary roles or fixed-term projects. Ideal for project-based work, seasonal needs, or interim positions.
+                    </p>
+                    <div className="ml-8 p-3 bg-white rounded-lg border border-gray-200">
+                      <p className="text-sm font-medium text-gray-800 mb-1">Fee Structure:</p>
+                      <p className="text-sm text-gray-600">Hourly rate markup or percentage of contract value (e.g., 15-30% markup on hourly rate)</p>
+                    </div>
+                  </div>
+
+                  {/* Contract-to-Hire */}
+                  <div
+                    onClick={() => setSelectedSearchType('Contract-to-Hire')}
+                    className={`p-6 rounded-xl border-2 cursor-pointer transition-all ${
+                      selectedSearchType === 'Contract-to-Hire'
+                        ? 'border-blue-600 bg-blue-50 shadow-md'
+                        : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-center space-x-3">
+                        <input
+                          type="radio"
+                          name="searchType"
+                          value="Contract-to-Hire"
+                          checked={selectedSearchType === 'Contract-to-Hire'}
+                          onChange={() => setSelectedSearchType('Contract-to-Hire')}
+                          className="w-5 h-5 text-blue-600 focus:ring-blue-500"
+                        />
+                        <h3 className="text-xl font-bold text-gray-900">Contract-to-Hire</h3>
+                      </div>
+                      {selectedSearchType === 'Contract-to-Hire' && (
+                        <CheckCircle className="w-6 h-6 text-blue-600" />
+                      )}
+                    </div>
+                    <p className="text-gray-700 mb-3 ml-8">
+                      Starts as a contract position, moves to permanent after a specified period (typically 3-6 months). Allows you to evaluate fit before permanent commitment.
+                    </p>
+                    <div className="ml-8 p-3 bg-white rounded-lg border border-gray-200">
+                      <p className="text-sm font-medium text-gray-800 mb-1">Fee Structure:</p>
+                      <p className="text-sm text-gray-600">Contract markup during contract period + conversion fee upon permanent hire (e.g., $5,000-$15,000 conversion fee)</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex justify-between items-center pt-6 mt-8 border-t border-gray-200">
+                  <button
+                    onClick={() => setCurrentStep(1)}
+                    className="px-4 py-2 lg:px-6 lg:py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm lg:text-base flex items-center space-x-2"
+                  >
+                    <ArrowLeft className="w-5 h-5" />
+                    <span>Back to Job Details</span>
+                  </button>
+                  <button
+                    onClick={handleFinalSubmit}
+                    disabled={!selectedSearchType}
+                    className="px-4 py-2 lg:px-6 lg:py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg font-semibold hover:from-blue-700 hover:to-blue-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 text-sm lg:text-base"
+                  >
+                    <Briefcase className="w-5 h-5" />
+                    <span>Post Job</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 
@@ -1139,7 +1769,11 @@ const EmployerDashboard: React.FC<EmployerDashboardProps> = ({ onBack, onAddJob 
             <p className="text-sm lg:text-base text-gray-600">View and manage your active job listings</p>
           </div>
           <button
-            onClick={() => setActiveTab('post-job')}
+            onClick={() => {
+              setActiveTab('post-job');
+              setCurrentStep(1);
+              setSelectedSearchType('');
+            }}
             className="px-4 py-2 lg:px-6 lg:py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg font-semibold hover:from-purple-700 hover:to-blue-700 transition-all flex items-center space-x-2 text-sm lg:text-base"
           >
             <Plus className="w-5 h-5" />
@@ -1307,7 +1941,11 @@ const EmployerDashboard: React.FC<EmployerDashboardProps> = ({ onBack, onAddJob 
             <div className="hidden lg:flex items-center space-x-4">
               <button
                 data-onboarding="post-job"
-                onClick={() => setActiveTab('post-job')}
+                onClick={() => {
+                  setActiveTab('post-job');
+                  setCurrentStep(1);
+                  setSelectedSearchType('');
+                }}
                 className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                   activeTab === 'post-job' 
                     ? 'bg-blue-100 text-blue-600' 
@@ -1358,6 +1996,8 @@ const EmployerDashboard: React.FC<EmployerDashboardProps> = ({ onBack, onAddJob 
                   <button
                     onClick={() => {
                       setActiveTab('post-job');
+                      setCurrentStep(1);
+                      setSelectedSearchType('');
                       setIsMobileMenuOpen(false);
                     }}
                     className={`w-full flex items-center space-x-2 px-4 py-3 rounded-lg transition-colors ${
