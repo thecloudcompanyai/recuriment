@@ -385,265 +385,157 @@ const EmployerDashboard: React.FC<EmployerDashboardProps> = ({ onBack, onAddJob 
     setCurrentStep(2);
   };
 
-  const handleFinalSubmit = () => {
-    // Validate search type is selected
-    if (!selectedSearchType) {
-      alert('Please select a search type to proceed.');
-      return;
-    }
+ const handleFinalSubmit = () => {
+  // Validate search type is selected
+  if (!selectedSearchType) {
+    alert('Please select a search type to proceed.');
+    return;
+  }
 
-    // Update jobForm with selected search type
-    const finalJobForm = { ...jobForm, searchType: selectedSearchType };
+  // Merge selected search type into job form
+  const finalJobForm = { ...jobForm, searchType: selectedSearchType };
 
-    // Get the actual currency to use
-    const actualCurrency = finalJobForm.currency === 'OTHER' ? finalJobForm.customCurrency : finalJobForm.currency;
+  // Determine currency
+  const actualCurrency =
+    finalJobForm.currency === 'OTHER'
+      ? finalJobForm.customCurrency
+      : finalJobForm.currency;
 
-    // Construct salary string
-    let salaryString = '';
-    if (finalJobForm.baseSalaryMin && finalJobForm.baseSalaryMax) {
-      salaryString = `${actualCurrency} ${finalJobForm.baseSalaryMin} - ${finalJobForm.baseSalaryMax}`;
+  // Build salary string
+  let salaryString = 'Competitive';
+
+  if (finalJobForm.baseSalaryMin && finalJobForm.baseSalaryMax) {
+    salaryString = `${actualCurrency} ${finalJobForm.baseSalaryMin} - ${finalJobForm.baseSalaryMax}`;
+  }
+
+  if (finalJobForm.bonusTarget && finalJobForm.bonusMax) {
+    if (finalJobForm.bonusType === 'percentage') {
+      salaryString += ` + Bonus (${finalJobForm.bonusTarget}% - ${finalJobForm.bonusMax}%)`;
     } else {
-      salaryString = 'Competitive';
+      salaryString += ` + Bonus (${actualCurrency} ${finalJobForm.bonusTarget} - ${finalJobForm.bonusMax})`;
     }
+  }
 
-    // Add bonus info if provided
-    if (finalJobForm.bonusTarget && finalJobForm.bonusMax) {
-      if (finalJobForm.bonusType === 'percentage') {
-        salaryString += ` + Bonus (${finalJobForm.bonusTarget}% - ${finalJobForm.bonusMax}%)`;
-      } else {
-        salaryString += ` + Bonus (${actualCurrency} ${finalJobForm.bonusTarget} - ${finalJobForm.bonusMax})`;
-      }
-    }
+  // Build location string
+  let locationString = '';
 
-    // Construct location string
-    let locationString = '';
-    if (finalJobForm.locationType === 'Remote') {
-      locationString = finalJobForm.state
-        ? `${finalJobForm.state}, ${finalJobForm.country} (Remote)`
-        : `${finalJobForm.country} (Remote - Work from anywhere)`;
+  if (finalJobForm.locationType === 'Remote') {
+    locationString = finalJobForm.state
+      ? `${finalJobForm.state}, ${finalJobForm.country} (Remote)`
+      : `${finalJobForm.country} (Remote - Work from anywhere)`;
+  } else {
+    if (
+      finalJobForm.country === 'United States' ||
+      finalJobForm.country === 'Canada'
+    ) {
+      locationString = `${finalJobForm.city}, ${finalJobForm.state} (${finalJobForm.locationType})`;
     } else {
-      if (finalJobForm.country === 'United States' || finalJobForm.country === 'Canada') {
-        locationString = `${finalJobForm.city}, ${finalJobForm.state} (${finalJobForm.locationType})`;
-      } else {
-        locationString = `${finalJobForm.city}, ${finalJobForm.country} (${finalJobForm.locationType})`;
-      }
+      locationString = `${finalJobForm.city}, ${finalJobForm.country} (${finalJobForm.locationType})`;
     }
+  }
 
-    // Add job to global state for job seekers to see
-    const jobForJobSeekers: Omit<Job, 'id' | 'posted'> = {
-      title: finalJobForm.title,
-      company: finalJobForm.company,
-      location: locationString,
-      type: finalJobForm.type,
-      salary: salaryString,
-      description: finalJobForm.description,
-      requirements: finalJobForm.requirements.split(',').map(req => req.trim()).filter(req => req),
-      tags: [
-        finalJobForm.type,
-        finalJobForm.locationType,
-        finalJobForm.jobCategory,
-        finalJobForm.seniorityLevel,
-        salaryString.includes(actualCurrency) ? 'Competitive Salary' : 'Salary Negotiable'
-      ].filter(tag => tag)
-    };
-
-    // Add to global jobs state
-    onAddJob(jobForJobSeekers);
-
-    // For employer records
-    const newJob: JobPosting = {
-      id: Date.now().toString(),
-      title: finalJobForm.title,
-      company: finalJobForm.company,
-      location: locationString,
-      salary: salaryString,
-      requirements: finalJobForm.requirements.split(',').map(req => req.trim()).filter(req => req),
-      description: finalJobForm.description,
-      type: finalJobForm.type,
-      posted: 'Just now',
-      status: 'active',
-      salaryRating: salaryRating
-    };
-
-    setPostedJobs(prev => [newJob, ...prev]);
-    setJobForm({
-      title: '',
-      company: '',
-      country: 'United States',
-      city: '',
-      state: '',
-      locationType: 'On-site',
-      daysInOffice: '',
-      travelPercentage: '',
-      salary: '',
-      currency: 'USD',
-      customCurrency: '',
-      baseSalaryMin: '',
-      baseSalaryMax: '',
-      bonusTarget: '',
-      bonusMax: '',
-      bonusType: 'amount',
-      benefits: {
-        pension: false,
-        health: false,
-        dental: false,
-        vacation: ''
-      },
-      perks: {
-        rsuOrStockOptions: '',
-        equityOrProfitSharing: '',
-        signOnBonus: '',
-        relocationAssistance: '',
-        temporaryHousing: '',
-        otherPerks: '',
-        visaSponsorship: ''
-      },
-      seniorityLevel: '',
-      directReports: '',
-      indirectReports: '',
-      reportsToName: '',
-      reportsToTitle: '',
-      dottedLineToName: '',
-      dottedLineToTitle: '',
-      jobCategory: '',
-      requirements: '',
-      description: '',
-      type: 'Full-time',
-      confidentialSearch: false,
-      sellingPoints: '',
-      applicationProcess: '',
-      targetStartDate: '',
-      searchType: ''
-    });
-    setSelectedSearchType('');
-    setCurrentStep(1);
-    alert('Job posted successfully!');
-    setActiveTab('manage-jobs');
+  // Job for job seekers
+  const jobForJobSeekers: Omit<Job, 'id' | 'posted'> = {
+    title: finalJobForm.title,
+    company: finalJobForm.company,
+    location: locationString,
+    type: finalJobForm.type,
+    salary: salaryString,
+    description: finalJobForm.description,
+    requirements: finalJobForm.requirements
+      .split(',')
+      .map(req => req.trim())
+      .filter(Boolean),
+    tags: [
+      finalJobForm.type,
+      finalJobForm.locationType,
+      finalJobForm.jobCategory,
+      finalJobForm.seniorityLevel,
+      salaryString.includes(actualCurrency)
+        ? 'Competitive Salary'
+        : 'Salary Negotiable'
+    ].filter(Boolean)
   };
 
-    // Get the actual currency to use
-    const actualCurrency = jobForm.currency === 'OTHER' ? jobForm.customCurrency : jobForm.currency;
+  onAddJob(jobForJobSeekers);
 
-    // Construct salary string
-    let salaryString = '';
-    if (jobForm.baseSalaryMin && jobForm.baseSalaryMax) {
-      salaryString = `${actualCurrency} ${jobForm.baseSalaryMin} - ${jobForm.baseSalaryMax}`;
-    } else {
-      salaryString = 'Competitive';
-    }
-
-    // Add bonus info if provided
-    if (jobForm.bonusTarget && jobForm.bonusMax) {
-      if (jobForm.bonusType === 'percentage') {
-        salaryString += ` + Bonus (${jobForm.bonusTarget}% - ${jobForm.bonusMax}%)`;
-      } else {
-        salaryString += ` + Bonus (${actualCurrency} ${jobForm.bonusTarget} - ${jobForm.bonusMax})`;
-      }
-    }
-
-    // Construct location string
-    let locationString = '';
-    if (jobForm.locationType === 'Remote') {
-      locationString = jobForm.state
-        ? `${jobForm.state}, ${jobForm.country} (Remote)`
-        : `${jobForm.country} (Remote - Work from anywhere)`;
-    } else {
-      if (jobForm.country === 'United States' || jobForm.country === 'Canada') {
-        locationString = `${jobForm.city}, ${jobForm.state} (${jobForm.locationType})`;
-      } else {
-        locationString = `${jobForm.city}, ${jobForm.country} (${jobForm.locationType})`;
-      }
-    }
-
-    // Add job to global state for job seekers to see
-    const jobForJobSeekers: Omit<Job, 'id' | 'posted'> = {
-      title: jobForm.title,
-      company: jobForm.company,
-      location: locationString,
-      type: jobForm.type,
-      salary: salaryString,
-      description: jobForm.description,
-      requirements: jobForm.requirements.split(',').map(req => req.trim()).filter(req => req),
-      tags: [
-        jobForm.type,
-        jobForm.locationType,
-        jobForm.jobCategory,
-        jobForm.seniorityLevel,
-        salaryString.includes(actualCurrency) ? 'Competitive Salary' : 'Salary Negotiable'
-      ].filter(tag => tag)
-    };
-
-    // Add to global jobs state
-    onAddJob(jobForJobSeekers);
-
-    // For employer records
-    const newJob: JobPosting = {
-      id: Date.now().toString(),
-      title: jobForm.title,
-      company: jobForm.company,
-      location: locationString,
-      salary: salaryString,
-      requirements: jobForm.requirements.split(',').map(req => req.trim()).filter(req => req),
-      description: jobForm.description,
-      type: jobForm.type,
-      posted: 'Just now',
-      status: 'active',
-      salaryRating: salaryRating
-    };
-
-    setPostedJobs(prev => [newJob, ...prev]);
-    setJobForm({
-      title: '',
-      company: '',
-      country: 'United States',
-      city: '',
-      state: '',
-      locationType: 'On-site',
-      daysInOffice: '',
-      travelPercentage: '',
-      salary: '',
-      currency: 'USD',
-      customCurrency: '',
-      baseSalaryMin: '',
-      baseSalaryMax: '',
-      bonusTarget: '',
-      bonusMax: '',
-      bonusType: 'amount',
-      benefits: {
-        pension: false,
-        health: false,
-        dental: false,
-        vacation: ''
-      },
-      perks: {
-        rsuOrStockOptions: '',
-        equityOrProfitSharing: '',
-        signOnBonus: '',
-        relocationAssistance: '',
-        temporaryHousing: '',
-        otherPerks: '',
-        visaSponsorship: ''
-      },
-      seniorityLevel: '',
-      directReports: '',
-      indirectReports: '',
-      reportsToName: '',
-      reportsToTitle: '',
-      dottedLineToName: '',
-      dottedLineToTitle: '',
-      jobCategory: '',
-      requirements: '',
-      description: '',
-      type: 'Full-time',
-      confidentialSearch: false,
-      sellingPoints: '',
-      applicationProcess: '',
-      targetStartDate: '',
-      searchType: ''
-    });
-    alert('Job posted successfully!');
-    setActiveTab('manage-jobs');
+  // Employer job record
+  const newJob: JobPosting = {
+    id: Date.now().toString(),
+    title: finalJobForm.title,
+    company: finalJobForm.company,
+    location: locationString,
+    salary: salaryString,
+    requirements: finalJobForm.requirements
+      .split(',')
+      .map(req => req.trim())
+      .filter(Boolean),
+    description: finalJobForm.description,
+    type: finalJobForm.type,
+    posted: 'Just now',
+    status: 'active',
+    salaryRating
   };
+
+  setPostedJobs(prev => [newJob, ...prev]);
+
+  // Reset form
+  setJobForm({
+    title: '',
+    company: '',
+    country: 'United States',
+    city: '',
+    state: '',
+    locationType: 'On-site',
+    daysInOffice: '',
+    travelPercentage: '',
+    salary: '',
+    currency: 'USD',
+    customCurrency: '',
+    baseSalaryMin: '',
+    baseSalaryMax: '',
+    bonusTarget: '',
+    bonusMax: '',
+    bonusType: 'amount',
+    benefits: {
+      pension: false,
+      health: false,
+      dental: false,
+      vacation: ''
+    },
+    perks: {
+      rsuOrStockOptions: '',
+      equityOrProfitSharing: '',
+      signOnBonus: '',
+      relocationAssistance: '',
+      temporaryHousing: '',
+      otherPerks: '',
+      visaSponsorship: ''
+    },
+    seniorityLevel: '',
+    directReports: '',
+    indirectReports: '',
+    reportsToName: '',
+    reportsToTitle: '',
+    dottedLineToName: '',
+    dottedLineToTitle: '',
+    jobCategory: '',
+    requirements: '',
+    description: '',
+    type: 'Full-time',
+    confidentialSearch: false,
+    sellingPoints: '',
+    applicationProcess: '',
+    targetStartDate: '',
+    searchType: ''
+  });
+
+  setSelectedSearchType('');
+  setCurrentStep(1);
+  setActiveTab('manage-jobs');
+
+  alert('Job posted successfully!');
+};
 
   const renderPostJob = () => (
     <div className="max-w-4xl mx-auto px-4 lg:px-0">
