@@ -2038,5 +2038,6 @@ const EmployerDashboard: React.FC<EmployerDashboardProps> = ({ onBack, onAddJob 
     </div>
   );
 
+};
 
 export default EmployerDashboard;
