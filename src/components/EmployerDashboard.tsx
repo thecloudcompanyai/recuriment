@@ -23,7 +23,10 @@ import {
   TrendingUp,
   Plane,
   Award,
-  Landmark
+  Landmark,
+  Upload,
+  Phone,
+  Mail
 } from 'lucide-react';
 
 interface EmployerDashboardProps {
@@ -60,6 +63,8 @@ const EmployerDashboard: React.FC<EmployerDashboardProps> = ({ onBack, onAddJob 
   });
   const [currentStep, setCurrentStep] = useState(1); // 1 = Job Posting Form, 2 = Search Type Selection
   const [selectedSearchType, setSelectedSearchType] = useState<string>('');
+  const [isParsingDocument, setIsParsingDocument] = useState(false);
+  const [showRecruiterContact, setShowRecruiterContact] = useState(false);
 
   const onboardingSteps = [
     {
@@ -244,6 +249,144 @@ const EmployerDashboard: React.FC<EmployerDashboardProps> = ({ onBack, onAddJob 
       }));
     } else {
       setJobForm(prev => ({ ...prev, [field]: value }));
+    }
+  };
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const allowedTypes = [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'text/plain'
+    ];
+
+    if (!allowedTypes.includes(file.type)) {
+      alert('Please upload a PDF, Word document (.doc, .docx), or text file.');
+      return;
+    }
+
+    setIsParsingDocument(true);
+
+    try {
+      const reader = new FileReader();
+
+      reader.onload = async (e) => {
+        const text = e.target?.result as string;
+
+        const prompt = `
+          Analyze the following job description document and extract all relevant information. Return the response in JSON format with the exact structure shown below:
+
+          Document Content:
+          ${text}
+
+          Please extract:
+          1. Job title
+          2. Company name
+          3. Location (city, state/province, country)
+          4. Job type (Full-time, Part-time, Contract, etc.)
+          5. Location type (On-site, Remote, Hybrid)
+          6. Salary range (min and max)
+          7. Currency (USD, CAD, EUR, etc.)
+          8. Required skills and qualifications
+          9. Full job description
+          10. Seniority level
+          11. Travel percentage
+          12. Benefits mentioned
+          13. Any bonus information
+
+          Return ONLY valid JSON in this exact format:
+          {
+            "title": "string",
+            "company": "string",
+            "city": "string",
+            "state": "string",
+            "country": "string",
+            "locationType": "string",
+            "type": "string",
+            "baseSalaryMin": "string",
+            "baseSalaryMax": "string",
+            "currency": "string",
+            "requirements": "string (comma-separated)",
+            "description": "string",
+            "seniorityLevel": "string",
+            "travelPercentage": "string",
+            "benefits": {
+              "pension": boolean,
+              "health": boolean,
+              "dental": boolean,
+              "vacation": "string"
+            },
+            "bonusTarget": "string",
+            "bonusMax": "string"
+          }
+
+          If any field is not found in the document, use empty string or false for booleans.
+        `;
+
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        const responseText = response.text();
+
+        const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          const parsedData = JSON.parse(jsonMatch[0]);
+
+          setJobForm(prev => ({
+            ...prev,
+            title: parsedData.title || prev.title,
+            company: parsedData.company || prev.company,
+            city: parsedData.city || prev.city,
+            state: parsedData.state || prev.state,
+            country: parsedData.country || prev.country,
+            locationType: parsedData.locationType || prev.locationType,
+            type: parsedData.type || prev.type,
+            baseSalaryMin: parsedData.baseSalaryMin || prev.baseSalaryMin,
+            baseSalaryMax: parsedData.baseSalaryMax || prev.baseSalaryMax,
+            currency: parsedData.currency || prev.currency,
+            requirements: parsedData.requirements || prev.requirements,
+            description: parsedData.description || prev.description,
+            seniorityLevel: parsedData.seniorityLevel || prev.seniorityLevel,
+            travelPercentage: parsedData.travelPercentage || prev.travelPercentage,
+            benefits: {
+              pension: parsedData.benefits?.pension || prev.benefits.pension,
+              health: parsedData.benefits?.health || prev.benefits.health,
+              dental: parsedData.benefits?.dental || prev.benefits.dental,
+              vacation: parsedData.benefits?.vacation || prev.benefits.vacation
+            },
+            bonusTarget: parsedData.bonusTarget || prev.bonusTarget,
+            bonusMax: parsedData.bonusMax || prev.bonusMax
+          }));
+
+          alert('Document parsed successfully! Please review and complete any missing fields.');
+        } else {
+          throw new Error('Invalid response format');
+        }
+      };
+
+      if (file.type === 'text/plain') {
+        reader.readAsText(file);
+      } else {
+        reader.readAsText(file);
+      }
+
+    } catch (error) {
+      console.error('Error parsing document:', error);
+      let errorMessage = 'Failed to parse document. Please try again or fill the form manually.';
+
+      if (error instanceof Error) {
+        if (error.message.includes('503') || error.message.includes('overloaded')) {
+          errorMessage = 'The AI service is currently busy. Please try again in a few moments.';
+        }
+      }
+
+      alert(errorMessage);
+    } finally {
+      setIsParsingDocument(false);
+      event.target.value = '';
     }
   };
 
@@ -548,6 +691,132 @@ const EmployerDashboard: React.FC<EmployerDashboardProps> = ({ onBack, onAddJob 
           <p className="text-sm lg:text-base text-gray-600">Create an attractive job posting to find the perfect candidate</p>
         </div>
       </div>
+
+      {/* Quick Actions Section */}
+      <div className="grid md:grid-cols-2 gap-4 mb-8">
+        {/* Upload Job Description */}
+        <div className="bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-200 rounded-xl p-6 hover:shadow-lg transition-all">
+          <div className="flex items-start space-x-4">
+            <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center flex-shrink-0">
+              <Upload className="w-6 h-6 text-white" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-lg font-bold text-gray-900 mb-2">Upload Job Description</h3>
+              <p className="text-sm text-gray-600 mb-4">
+                Have an existing job description? Upload it and we'll automatically fill in most fields for you.
+              </p>
+              <label className="inline-flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium cursor-pointer hover:bg-blue-700 transition-colors">
+                <input
+                  type="file"
+                  className="hidden"
+                  accept=".pdf,.doc,.docx,.txt"
+                  onChange={handleFileUpload}
+                  disabled={isParsingDocument}
+                />
+                {isParsingDocument ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Parsing...</span>
+                  </>
+                ) : (
+                  <>
+                    <Upload className="w-4 h-4" />
+                    <span>Upload Document</span>
+                  </>
+                )}
+              </label>
+              <p className="text-xs text-gray-500 mt-2">Supports PDF, Word, and text files</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Speak with a Recruiter */}
+        <div className="bg-gradient-to-br from-green-50 to-green-100 border-2 border-green-200 rounded-xl p-6 hover:shadow-lg transition-all">
+          <div className="flex items-start space-x-4">
+            <div className="w-12 h-12 bg-green-600 rounded-xl flex items-center justify-center flex-shrink-0">
+              <Phone className="w-6 h-6 text-white" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-lg font-bold text-gray-900 mb-2">Speak with a Recruiter</h3>
+              <p className="text-sm text-gray-600 mb-4">
+                Need help or have questions? Our recruitment team is ready to assist you.
+              </p>
+              <button
+                onClick={() => setShowRecruiterContact(!showRecruiterContact)}
+                className="inline-flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors"
+              >
+                <Phone className="w-4 h-4" />
+                <span>Contact Recruiter</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Recruiter Contact Details (Expandable) */}
+      {showRecruiterContact && (
+        <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 mb-8">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-xl font-bold text-gray-900">Contact Our Recruiters</h3>
+            <button
+              onClick={() => setShowRecruiterContact(false)}
+              className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-6">
+            {/* General Contact */}
+            <div className="p-4 bg-gray-50 rounded-lg">
+              <h4 className="font-semibold text-gray-900 mb-3">General Inquiries</h4>
+              <div className="space-y-3">
+                <div className="flex items-start space-x-3">
+                  <Phone className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="text-sm font-medium text-gray-700">Phone</p>
+                    <a href="tel:+18772228431" className="text-sm text-blue-600 hover:text-blue-700">
+                      (+1) 877-222-8431
+                    </a>
+                  </div>
+                </div>
+                <div className="flex items-start space-x-3">
+                  <Mail className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="text-sm font-medium text-gray-700">Email</p>
+                    <a href="mailto:inquire@nasearchg.com" className="text-sm text-blue-600 hover:text-blue-700">
+                      inquire@nasearchg.com
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Specialized Agents */}
+            <div className="p-4 bg-gray-50 rounded-lg">
+              <h4 className="font-semibold text-gray-900 mb-3">Recruitment Specialists</h4>
+              <div className="space-y-3">
+                <div>
+                  <p className="text-sm font-semibold text-gray-900">Denny Antony, MBA</p>
+                  <p className="text-xs text-gray-600 mb-1">Americas, Middle East, Caribbean, Europe</p>
+                  <a href="tel:+19054772962" className="text-sm text-blue-600 hover:text-blue-700 block">
+                    (+1) 905-477-2962 ext. 28
+                  </a>
+                  <a href="mailto:denny@nasearchg.com" className="text-sm text-blue-600 hover:text-blue-700">
+                    denny@nasearchg.com
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <p className="text-sm text-gray-700">
+              <span className="font-medium">Note:</span> Our recruitment specialists can help you craft the perfect job description, determine competitive salary ranges, and provide guidance on attracting top talent in your industry.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Client Login Section */}
       {!isLoggedIn && (
