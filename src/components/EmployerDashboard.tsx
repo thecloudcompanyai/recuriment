@@ -26,7 +26,8 @@ import {
   Landmark,
   Upload,
   Phone,
-  Mail
+  Mail,
+  Paperclip
 } from 'lucide-react';
 
 interface EmployerDashboardProps {
@@ -688,7 +689,25 @@ const EmployerDashboard: React.FC<EmployerDashboardProps> = ({ onBack, onAddJob 
             <Plus className="w-6 h-6 lg:w-8 lg:h-8 text-white" />
           </div>
           <h1 className="text-2xl lg:text-3xl font-bold text-gray-800 mb-2">Post a New Job</h1>
-          <p className="text-sm lg:text-base text-gray-600">Create an attractive job posting to find the perfect candidate</p>
+          <p className="text-sm lg:text-base text-gray-600 mb-6">Create an attractive job posting to find the perfect candidate</p>
+
+          {/* Contact Action Buttons */}
+          <div className="flex flex-wrap justify-center gap-3">
+            <button
+              onClick={() => window.location.href = 'mailto:inquire@nasearchg.com'}
+              className="inline-flex items-center space-x-2 px-4 lg:px-6 py-2.5 lg:py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg font-semibold hover:from-blue-700 hover:to-blue-800 transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+            >
+              <Paperclip className="w-4 h-4 lg:w-5 lg:h-5" />
+              <span className="text-sm lg:text-base">Send Resume</span>
+            </button>
+            <button
+              onClick={() => window.location.href = 'tel:+18772228431'}
+              className="inline-flex items-center space-x-2 px-4 lg:px-6 py-2.5 lg:py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg font-semibold hover:from-green-700 hover:to-green-800 transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+            >
+              <Phone className="w-4 h-4 lg:w-5 lg:h-5" />
+              <span className="text-sm lg:text-base">Call Us</span>
+            </button>
+          </div>
         </div>
       </div>
 
